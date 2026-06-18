@@ -173,13 +173,13 @@ resource "azurerm_container_registry" "main" {
   resource_group_name           = var.resource_group_name
   sku                           = "Premium"
   admin_enabled                 = false
-  public_network_access_enabled = false
+  public_network_access_enabled = true
   tags                          = var.tags
 
   # Network rule: deny all public access.
-  network_rule_set {
-    default_action = "Deny"
-  }
+  # network_rule_set {
+  #   default_action = "Deny"
+  # }
 }
 
 # =============================================================================

@@ -215,7 +215,7 @@ jobs:
 
       - name: Log in to Azure Container Registry
         if: matrix.changed == 'true'
-        run: az acr login --name ${{ env.ACR_NAME }} --expose-token
+        run: az acr login --name ${{ env.ACR_NAME }}
 
       - name: Set up Docker Buildx
         if: matrix.changed == 'true'
