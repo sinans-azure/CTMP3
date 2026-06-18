@@ -1,0 +1,40 @@
+# ============================================================================
+# ArgoCD Application: Analytics Service (Platform metrics & activity streams)
+# ============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: analytics-service
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: training-portal
+    app.kubernetes.io/component: api
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd-image-updater.argoproj.io/image-list: analytics=ctmp3acr.azurecr.io/analytics-service
+    argocd-image-updater.argoproj.io/analytics.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/analytics.force-update: "true"
+    argocd-image-updater.argoproj.io/write-back-method: git
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/your-org/ctmp3.git
+    targetRevision: HEAD
+    path: src/services/analytics-service/k8s/
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: training-portal
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

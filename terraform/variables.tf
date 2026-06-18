@@ -1,0 +1,121 @@
+# =============================================================================
+# Cross-Cloud GitOps Training Portal — Global Variables
+# =============================================================================
+# Central configuration for all modules. Override via terraform.tfvars or
+# environment variables (TF_VAR_xxx).
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# General
+# -----------------------------------------------------------------------------
+
+variable "resource_group_name" {
+  description = "Name of the Azure Resource Group for all resources."
+  type        = string
+  default     = "rg-ctmp3"
+}
+
+variable "location" {
+  description = "Azure region — globally forced to Central India."
+  type        = string
+  default     = "centralindia"
+
+  validation {
+    condition     = var.location == "centralindia"
+    error_message = "All resources must be deployed to the centralindia region."
+  }
+}
+
+variable "prefix" {
+  description = "Naming prefix applied to all resources."
+  type        = string
+  default     = "ctmp3"
+}
+
+variable "environment" {
+  description = "Deployment environment (dev, staging, prod)."
+  type        = string
+  default     = "prod"
+}
+
+variable "tags" {
+  description = "Additional tags to apply to all resources."
+  type        = map(string)
+  default     = {}
+}
+
+# -----------------------------------------------------------------------------
+# Networking
+# -----------------------------------------------------------------------------
+
+variable "vnet_address_space" {
+  description = "Address space for the Virtual Network."
+  type        = list(string)
+  default     = ["10.0.0.0/16"]
+}
+
+variable "appgw_subnet_cidr" {
+  description = "CIDR for the Application Gateway subnet."
+  type        = string
+  default     = "10.0.1.0/24"
+}
+
+variable "aks_subnet_cidr" {
+  description = "CIDR for the AKS node pool subnet (/22 for Azure CNI)."
+  type        = string
+  default     = "10.0.2.0/22"
+}
+
+variable "func_subnet_cidr" {
+  description = "CIDR for the Function App VNet integration subnet."
+  type        = string
+  default     = "10.0.6.0/24"
+}
+
+variable "pe_subnet_cidr" {
+  description = "CIDR for the Private Endpoints subnet."
+  type        = string
+  default     = "10.0.7.0/24"
+}
+
+variable "aks_api_subnet_cidr" {
+  description = "CIDR for AKS API server VNet integration (/28 min)."
+  type        = string
+  default     = "10.0.8.0/28"
+}
+
+# -----------------------------------------------------------------------------
+# Domain & DNS
+# -----------------------------------------------------------------------------
+
+variable "domain_name" {
+  description = "Public domain name for the training portal DNS zone."
+  type        = string
+  default     = "training.contoso.com"
+}
+
+# -----------------------------------------------------------------------------
+# AKS Compute
+# -----------------------------------------------------------------------------
+
+variable "system_node_vm_size" {
+  description = "VM size for the AKS system (default) node pool."
+  type        = string
+  default     = "Standard_D2s_v5"
+}
+
+variable "user_node_vm_size" {
+  description = "VM size for the AKS user (workload) node pool."
+  type        = string
+  default     = "Standard_D2s_v5"
+}
+
+# -----------------------------------------------------------------------------
+# ACR
+# -----------------------------------------------------------------------------
+
+variable "acr_name" {
+  description = "Globally unique name for Azure Container Registry (alphanumeric only)."
+  type        = string
+  default     = "ctmp3acr"
+}

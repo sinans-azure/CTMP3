@@ -1,0 +1,98 @@
+# ============================================================================
+# ArgoCD App-of-Apps — Bootstrap Root Application
+# ============================================================================
+# This is the single entry-point Application that ArgoCD uses to discover
+# and manage all child Application manifests in the gitops/apps/ directory.
+#
+# DEPLOYMENT:
+#   kubectl apply -f gitops/bootstrap/argocd-app-of-apps.yaml
+#
+# PREREQUISITES:
+#   1. ArgoCD installed in the 'argocd' namespace on the private AKS cluster
+#   2. Git repository credentials configured in ArgoCD (for private repos)
+#   3. ACR credentials configured for ArgoCD Image Updater
+#
+# HOW IT WORKS:
+#   ArgoCD reads all YAML files in gitops/apps/ and creates child Application
+#   resources. Each child Application manages one microservice's K8s manifests.
+#   When you push changes to the Git repo, ArgoCD auto-syncs the cluster state.
+# ============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: training-portal-root
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: training-portal
+    app.kubernetes.io/managed-by: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    # Notifications (optional — configure ArgoCD Notifications for Slack/Teams)
+    notifications.argoproj.io/subscribe.on-sync-succeeded.slack: training-portal-deploys
+spec:
+  project: default
+
+  source:
+    # IMPORTANT: Update this to your actual Git repository URL
+    repoURL: https://github.com/your-org/ctmp3.git
+    targetRevision: HEAD
+    path: gitops/apps/
+
+  destination:
+    # In-cluster — ArgoCD runs inside the same AKS cluster
+    server: https://kubernetes.default.svc
+    namespace: argocd
+
+  syncPolicy:
+    automated:
+      prune: true        # Remove apps when their YAML is deleted from Git
+      selfHeal: true     # Re-sync if someone manually modifies cluster state
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+---
+# ============================================================================
+# ArgoCD Image Updater Configuration
+# ============================================================================
+# Configures ArgoCD Image Updater to watch the Azure Container Registry (ACR)
+# for new image tags and automatically update the K8s manifests.
+# ============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-image-updater-config
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: argocd-image-updater
+data:
+  registries.conf: |
+    registries:
+      - name: Azure Container Registry
+        api_url: https://ctmp3acr.azurecr.io
+        prefix: ctmp3acr.azurecr.io
+        ping: yes
+        # Use AKS-managed ACR integration (az aks update --attach-acr)
+        # For Service Principal auth, use: credentials: pullsecret:argocd/acr-credentials
+        default: true
+  log.level: info
+
+---
+# ============================================================================
+# Namespace for the Training Portal workloads
+# ============================================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: training-portal
+  labels:
+    app.kubernetes.io/part-of: training-portal
+    istio-injection: disabled

@@ -1,0 +1,41 @@
+# ============================================================================
+# ArgoCD Application: Frontend (Next.js 15)
+# ============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: frontend
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: training-portal
+    app.kubernetes.io/component: frontend
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    # ArgoCD Image Updater — auto-detect new images from ACR
+    argocd-image-updater.argoproj.io/image-list: frontend=ctmp3acr.azurecr.io/frontend
+    argocd-image-updater.argoproj.io/frontend.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/frontend.force-update: "true"
+    argocd-image-updater.argoproj.io/write-back-method: git
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/your-org/ctmp3.git
+    targetRevision: HEAD
+    path: src/frontend/k8s/
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: training-portal
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
