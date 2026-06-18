@@ -31,8 +31,8 @@ resource "azurerm_kubernetes_cluster" "main" {
 
   # --- API server VNet integration (places API server in aks-api-subnet) ---
   api_server_access_profile {
-    vnet_integration_enabled = true
-    subnet_id                = var.aks_api_subnet_id
+    virtual_network_integration_enabled = true
+    subnet_id                           = var.aks_api_subnet_id
   }
 
   # --- Cluster identity: SystemAssigned managed identity ---

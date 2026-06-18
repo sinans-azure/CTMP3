@@ -22,7 +22,7 @@ resource "azurerm_key_vault" "main" {
   tags                = var.tags
 
   # --- RBAC-based access (no legacy access policies) ---
-  enable_rbac_authorization = true
+  rbac_authorization_enabled = true
 
   # --- Security hardening ---
   purge_protection_enabled = true

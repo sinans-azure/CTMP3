@@ -24,15 +24,16 @@
 # speech, vision, language, etc. We use it as the foundation for AI Foundry.
 # =============================================================================
 
-resource "azurerm_ai_services" "main" {
+resource "azurerm_cognitive_account" "main" {
   name                  = "${var.prefix}-ai-services"
   location              = var.location
   resource_group_name   = var.resource_group_name
+  kind                  = "AIServices"
   sku_name              = "S0"
   tags                  = var.tags
 
   # --- No public network access: private endpoint only ---
-  public_network_access = "Disabled"
+  public_network_access_enabled = false
 
   # --- System-assigned identity for RBAC ---
   identity {
@@ -89,14 +90,14 @@ resource "azurerm_ai_foundry_project" "main" {
 # LLM used by the training portal for AI-assisted learning features.
 # =============================================================================
 
-resource "azurerm_ai_deployment" "gpt4o" {
+resource "azurerm_cognitive_deployment" "gpt4o" {
   name                 = "${var.prefix}-gpt4o"
-  ai_services_id       = azurerm_ai_services.main.id
+  cognitive_account_id = azurerm_cognitive_account.main.id
 
   model {
-    model_format  = "OpenAI"
-    model_name    = var.openai_model_name
-    model_version = var.openai_model_version
+    format  = "OpenAI"
+    name    = var.openai_model_name
+    version = var.openai_model_version
   }
 
   sku {
@@ -121,7 +122,7 @@ resource "azurerm_private_endpoint" "cognitive" {
 
   private_service_connection {
     name                           = "${var.prefix}-cognitive-psc"
-    private_connection_resource_id = azurerm_ai_services.main.id
+    private_connection_resource_id = azurerm_cognitive_account.main.id
     is_manual_connection           = false
     subresource_names              = ["account"]
   }
@@ -148,7 +149,7 @@ resource "azurerm_private_endpoint" "openai" {
 
   private_service_connection {
     name                           = "${var.prefix}-openai-psc"
-    private_connection_resource_id = azurerm_ai_services.main.id
+    private_connection_resource_id = azurerm_cognitive_account.main.id
     is_manual_connection           = false
     subresource_names              = ["account"]
   }
@@ -167,13 +168,13 @@ resource "azurerm_private_endpoint" "openai" {
 # =============================================================================
 
 resource "azurerm_role_assignment" "hub_ai_services_contributor" {
-  scope                = azurerm_ai_services.main.id
+  scope                = azurerm_cognitive_account.main.id
   role_definition_name = "Cognitive Services Contributor"
   principal_id         = azurerm_ai_foundry.hub.identity[0].principal_id
 }
 
 resource "azurerm_role_assignment" "hub_ai_services_openai_contributor" {
-  scope                = azurerm_ai_services.main.id
+  scope                = azurerm_cognitive_account.main.id
   role_definition_name = "Cognitive Services OpenAI Contributor"
   principal_id         = azurerm_ai_foundry.hub.identity[0].principal_id
 }

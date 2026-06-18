@@ -4,12 +4,12 @@
 
 output "ai_services_id" {
   description = "Resource ID of the Azure AI Services (Cognitive) account."
-  value       = azurerm_ai_services.main.id
+  value       = azurerm_cognitive_account.main.id
 }
 
 output "ai_services_endpoint" {
   description = "Endpoint of the Azure AI Services account."
-  value       = azurerm_ai_services.main.endpoint
+  value       = azurerm_cognitive_account.main.endpoint
 }
 
 output "ai_foundry_hub_id" {
@@ -24,10 +24,10 @@ output "ai_foundry_project_id" {
 
 output "openai_deployment_name" {
   description = "Name of the GPT-4o OpenAI deployment."
-  value       = azurerm_ai_deployment.gpt4o.name
+  value       = azurerm_cognitive_deployment.gpt4o.name
 }
 
 output "ai_services_principal_id" {
   description = "Principal ID of the AI Services system-assigned identity."
-  value       = azurerm_ai_services.main.identity[0].principal_id
+  value       = azurerm_cognitive_account.main.identity[0].principal_id
 }
