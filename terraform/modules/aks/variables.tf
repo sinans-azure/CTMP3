@@ -33,7 +33,7 @@ variable "tags" {
 variable "kubernetes_version" {
   description = "Kubernetes version for the AKS cluster. Use 'az aks get-versions' to list available versions."
   type        = string
-  default     = "1.30"
+  default     = "1.30.9"
 }
 
 variable "default_node_pool_vm_size" {
