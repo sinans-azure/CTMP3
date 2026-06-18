@@ -161,7 +161,16 @@ jobs:
     name: "Build ${{ matrix.service }}"
     needs: detect-changes
     if: >-
-      github.ref == 'refs/heads/main' && github.event_name == 'push'
+      github.ref == 'refs/heads/main' && github.event_name == 'push' && (
+        needs.detect-changes.outputs.auth-service == 'true' ||
+        needs.detect-changes.outputs.admin-service == 'true' ||
+        needs.detect-changes.outputs.trainer-service == 'true' ||
+        needs.detect-changes.outputs.student-service == 'true' ||
+        needs.detect-changes.outputs.billing-service == 'true' ||
+        needs.detect-changes.outputs.analytics-service == 'true' ||
+        needs.detect-changes.outputs.frontend == 'true' ||
+        needs.detect-changes.outputs.functions == 'true'
+      )
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -193,24 +202,27 @@ jobs:
             changed: ${{ needs.detect-changes.outputs.functions }}
     steps:
       - name: Checkout
+        if: matrix.changed == 'true'
         uses: actions/checkout@v4
 
       - name: Azure Login (OIDC)
+        if: matrix.changed == 'true'
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Log in to Azure Container Registry
-        run: |
-          access_token=$(az acr login --name ${{ env.ACR_NAME }} --expose-token --output tsv --query accessToken)
-          echo "$access_token" | docker login ${{ env.ACR_LOGIN_SERVER }} --username 00000000-0000-0000-0000-000000000000 --password-stdin
+      - name: Login to Azure Container Registry
+        if: matrix.changed == 'true'
+        run: az acr login --name ${{ env.ACR_NAME }}
 
       - name: Set up Docker Buildx
+        if: matrix.changed == 'true'
         uses: docker/setup-buildx-action@v3
 
       - name: Build and Push Docker Image
+        if: matrix.changed == 'true'
         uses: docker/build-push-action@v5
         with:
           context: ${{ matrix.context }}
