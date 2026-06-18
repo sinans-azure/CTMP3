@@ -273,14 +273,4 @@ resource "azurerm_role_assignment" "aks_api_subnet_contributor" {
   principal_id         = azurerm_user_assigned_identity.aks.principal_id
 }
 
-# =============================================================================
-# AKS — Private DNS Zone Contributor
-# =============================================================================
-# Required so AKS can register its private FQDN in the private DNS zone.
-# =============================================================================
 
-resource "azurerm_role_assignment" "aks_dns_contributor" {
-  scope                = var.aks_private_dns_zone_id
-  role_definition_name = "Private DNS Zone Contributor"
-  principal_id         = azurerm_user_assigned_identity.aks.principal_id
-}
