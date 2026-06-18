@@ -84,6 +84,12 @@ variable "aks_api_subnet_cidr" {
   default     = "10.0.8.0/28"
 }
 
+variable "jumpbox_subnet_cidr" {
+  description = "CIDR for the Jumpbox subnet."
+  type        = string
+  default     = "10.0.9.0/24"
+}
+
 # -----------------------------------------------------------------------------
 # Domain & DNS
 # -----------------------------------------------------------------------------

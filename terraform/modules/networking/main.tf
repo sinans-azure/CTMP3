@@ -94,6 +94,14 @@ resource "azurerm_subnet" "aks_api" {
   }
 }
 
+# Jumpbox subnet — for administrator connectivity to AKS
+resource "azurerm_subnet" "jumpbox" {
+  name                 = "${var.prefix}-jumpbox-subnet"
+  resource_group_name  = var.resource_group_name
+  virtual_network_name = azurerm_virtual_network.main.name
+  address_prefixes     = [var.jumpbox_subnet_cidr]
+}
+
 # =============================================================================
 # Network Security Groups
 # =============================================================================

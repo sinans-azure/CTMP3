@@ -110,6 +110,7 @@ module "networking" {
   func_subnet_cidr     = var.func_subnet_cidr
   pe_subnet_cidr       = var.pe_subnet_cidr
   aks_api_subnet_cidr  = var.aks_api_subnet_cidr
+  jumpbox_subnet_cidr  = var.jumpbox_subnet_cidr
   public_dns_zone_name = var.domain_name
 }
 
@@ -239,6 +240,22 @@ module "ai_foundry" {
 
   key_vault_id       = module.key_vault.key_vault_id
   storage_account_id = module.function_app.storage_account_id
+}
+
+# =============================================================================
+# Module: Jumpbox
+# =============================================================================
+# Secure management gateway VM for cluster administrators.
+# =============================================================================
+
+module "jumpbox" {
+  source = "./modules/jumpbox"
+
+  resource_group_name  = azurerm_resource_group.main.name
+  location             = var.location
+  prefix               = var.prefix
+  tags                 = local.common_tags
+  subnet_id            = module.networking.jumpbox_subnet_id
 }
 
 # =============================================================================

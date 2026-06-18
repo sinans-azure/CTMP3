@@ -106,3 +106,12 @@ output "openai_deployment_name" {
   description = "Name of the GPT-4o deployment."
   value       = module.ai_foundry.openai_deployment_name
 }
+
+# -----------------------------------------------------------------------------
+# Jumpbox
+# -----------------------------------------------------------------------------
+
+output "jumpbox_public_ip" {
+  description = "Public IP address of the Jumpbox VM."
+  value       = module.jumpbox.jumpbox_public_ip
+}

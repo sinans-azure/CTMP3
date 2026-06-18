@@ -168,8 +168,7 @@ jobs:
         needs.detect-changes.outputs.student-service == 'true' ||
         needs.detect-changes.outputs.billing-service == 'true' ||
         needs.detect-changes.outputs.analytics-service == 'true' ||
-        needs.detect-changes.outputs.frontend == 'true' ||
-        needs.detect-changes.outputs.functions == 'true'
+        needs.detect-changes.outputs.frontend == 'true'
       )
     runs-on: ubuntu-latest
     strategy:
@@ -197,9 +196,6 @@ jobs:
           - service: frontend
             context: ./src/frontend
             changed: ${{ needs.detect-changes.outputs.frontend }}
-          - service: functions
-            context: ./src/functions
-            changed: ${{ needs.detect-changes.outputs.functions }}
     steps:
       - name: Checkout
         if: matrix.changed == 'true'
@@ -286,3 +282,35 @@ jobs:
                   print(f'❌ {sys.argv[1]}: {e}')
                   sys.exit(1)
           " {} \;
+
+  # ──────────────────────────────────────────────────────────────
+  # Job 5: Deploy Azure Function App (Zipped package deployment)
+  # ──────────────────────────────────────────────────────────────
+  deploy-functions:
+    name: "Deploy Azure Function"
+    needs: detect-changes
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && needs.detect-changes.outputs.functions == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to Azure Function App
+        uses: azure/functions-action@v2
+        with:
+          app-name: ctmp3-func
+          package: ./src/functions
+          scm-do-build-during-deployment: true
+          enable-oryx-build: true
