@@ -2,6 +2,33 @@
 # Certificate Renewal module — Main Configuration
 # =============================================================================
 
+terraform {
+  required_version = ">= 1.9.0"
+
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 4.0"
+    }
+    acme = {
+      source  = "vancluever/acme"
+      version = "~> 2.23.0"
+    }
+    tls = {
+      source  = "hashicorp/tls"
+      version = "~> 4.0"
+    }
+  }
+
+  backend "azurerm" {
+    resource_group_name  = "rg-ctmp3-tfstate"
+    storage_account_name = "stctmp3tfstate"
+    container_name       = "tfstate"
+    key                  = "ctmp3.cert.tfstate"
+    use_oidc             = true
+  }
+}
+
 # Retrieve subscription information from the current client context
 data "azurerm_client_config" "current" {}
 
@@ -59,6 +86,7 @@ resource "acme_certificate" "certificate" {
       AZURE_SUBSCRIPTION_ID = data.azurerm_client_config.current.subscription_id
       AZURE_RESOURCE_GROUP  = data.terraform_remote_state.main.outputs.resource_group_name
       AZURE_ZONE_NAME       = data.terraform_remote_state.main.outputs.domain_name
+      AZURE_AUTH_METHOD     = "cli" # Explicitly use Azure CLI credentials from azure/login
     }
   }
 }
@@ -67,7 +95,8 @@ resource "acme_certificate" "certificate" {
 # Push Certificate to Azure Key Vault
 # -----------------------------------------------------------------------------
 
-# Upload the certificate PKCS12 file into Key Vault
+# Upload the certificate PKCS12 file into Key Vault.
+# Since Key Vault is not generating/renewing this certificate, no certificate_policy is required.
 resource "azurerm_key_vault_certificate" "cert" {
   name         = var.certificate_name
   key_vault_id = data.terraform_remote_state.main.outputs.key_vault_id
@@ -75,23 +104,5 @@ resource "azurerm_key_vault_certificate" "cert" {
   certificate {
     contents = acme_certificate.certificate.certificate_p12
     password = acme_certificate.certificate.certificate_p12_password
-  }
-
-  # Clean properties (optional but recommended for standard rotation tracking)
-  certificate_policy {
-    issuer_parameters {
-      name = "Unknown"
-    }
-
-    key_properties {
-      exportable = true
-      key_size   = 2048
-      key_type   = "RSA"
-      reuse_key  = false
-    }
-
-    secret_properties {
-      content_type = "application/x-pkcs12"
-    }
   }
 }
