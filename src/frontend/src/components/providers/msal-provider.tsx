@@ -23,22 +23,24 @@ export function MsalProvider({ children }: MsalProviderProps) {
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    const initializeMsal = async () => {
-      if (!msalInstance) return;
-      await msalInstance.initialize();
+    const instance = msalInstance;
+    if (!instance) return;
 
-      const accounts = msalInstance.getAllAccounts();
+    const initializeMsal = async () => {
+      await instance.initialize();
+
+      const accounts = instance.getAllAccounts();
       if (accounts.length > 0) {
-        msalInstance.setActiveAccount(accounts[0]);
+        instance.setActiveAccount(accounts[0]);
       }
 
-      msalInstance.addEventCallback((event) => {
+      instance.addEventCallback((event) => {
         if (
           event.eventType === EventType.LOGIN_SUCCESS &&
           event.payload
         ) {
           const payload = event.payload as AuthenticationResult;
-          msalInstance.setActiveAccount(payload.account);
+          instance.setActiveAccount(payload.account);
         }
       });
 
