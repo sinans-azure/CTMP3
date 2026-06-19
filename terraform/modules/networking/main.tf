@@ -294,6 +294,20 @@ resource "azurerm_network_security_rule" "aks_allow_outbound_github" {
   network_security_group_name = azurerm_network_security_group.aks.name
 }
 
+resource "azurerm_network_security_rule" "aks_allow_outbound_azure_cloud" {
+  name                        = "Allow-Outbound-AzureCloud"
+  priority                    = 110
+  direction                   = "Outbound"
+  access                      = "Allow"
+  protocol                    = "*"
+  source_port_range           = "*"
+  destination_port_ranges     = ["443", "9000", "1194"]
+  source_address_prefix       = var.aks_subnet_cidr
+  destination_address_prefix  = "AzureCloud"
+  resource_group_name         = var.resource_group_name
+  network_security_group_name = azurerm_network_security_group.aks.name
+}
+
 # =============================================================================
 # NSG Rules — Function App
 # =============================================================================
