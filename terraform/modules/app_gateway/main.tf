@@ -186,7 +186,6 @@ resource "azurerm_application_gateway" "main" {
       probe,
       redirect_configuration,
       request_routing_rule,
-      ssl_certificate,
       url_path_map,
       tags["managed-by-k8s-ingress"],
     ]
