@@ -194,6 +194,14 @@ resource "azurerm_linux_function_app" "main" {
     "WEBSITE_RUN_FROM_PACKAGE"                         = "1"
   }
 
+  lifecycle {
+    ignore_changes = [
+      app_settings["AzureWebJobsStorage__accountName"],
+      app_settings["FUNCTIONS_EXTENSION_VERSION"],
+      app_settings["WEBSITE_RUN_FROM_PACKAGE"],
+    ]
+  }
+
   # Ensure private endpoints exist before the Function App tries to connect.
   depends_on = [
     azurerm_private_endpoint.func_blob,

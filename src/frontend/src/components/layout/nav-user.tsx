@@ -21,6 +21,13 @@ export function NavUser() {
   const { name, email, roles, isAdmin, isTrainer } = useAuth()
 
   const handleLogout = () => {
+    if (typeof window !== "undefined" && localStorage.getItem("ctmp_token")) {
+      localStorage.removeItem("ctmp_token");
+      localStorage.removeItem("ctmp_user");
+      window.location.href = "/";
+      return;
+    }
+
     instance.logoutRedirect().catch((e) => {
       console.error(e)
     })

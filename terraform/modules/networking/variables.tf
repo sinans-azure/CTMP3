@@ -81,3 +81,10 @@ variable "public_dns_zone_name" {
   type        = string
   default     = "training.sneakertail.online"
 }
+
+variable "pg_subnet_cidr" {
+  description = "CIDR block for the PostgreSQL Flexible Server VNet-integrated subnet."
+  type        = string
+  default     = "10.0.10.0/24"
+}
+

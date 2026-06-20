@@ -1,101 +1,176 @@
 "use client"
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
-import { useMsal } from "@azure/msal-react"
-import { useAuth } from "@/hooks/use-auth"
-import { loginRequest } from "@/lib/msal-config"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Terminal, Shield, ArrowRight, ShieldCheck, Cpu } from "lucide-react"
+import { Terminal, Shield, ArrowRight, ShieldCheck, Cpu, Cloud, BarChart3, Database, Key } from "lucide-react"
 
 export default function LandingPage() {
-  const { instance } = useMsal()
-  const { isAuthenticated, name } = useAuth()
-  const router = useRouter()
-  const [loading, setLoading] = React.useState(false)
-
-  React.useEffect(() => {
-    if (isAuthenticated) {
-      router.push("/dashboard")
-    }
-  }, [isAuthenticated, router])
-
-  const handleLogin = async () => {
-    setLoading(true)
-    try {
-      await instance.loginRedirect(loginRequest)
-    } catch (e) {
-      console.error("Login redirect failed", e)
-      setLoading(false)
-    }
-  }
-
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-zinc-950 px-4 py-12">
+    <div className="relative min-h-screen bg-zinc-950 text-zinc-50 overflow-hidden">
       {/* Decorative gradient glow background */}
-      <div className="absolute top-1/4 left-1/2 -z-10 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-500/10 blur-[80px]" />
-      <div className="absolute top-1/2 left-1/3 -z-10 h-[300px] w-[300px] rounded-full bg-blue-500/10 blur-[60px]" />
+      <div className="absolute top-0 left-1/4 -z-10 h-[600px] w-[600px] rounded-full bg-indigo-500/10 blur-[120px]" />
+      <div className="absolute top-1/3 right-1/4 -z-10 h-[500px] w-[500px] rounded-full bg-blue-500/10 blur-[100px]" />
+      <div className="absolute bottom-0 left-1/3 -z-10 h-[400px] w-[400px] rounded-full bg-emerald-500/5 blur-[80px]" />
 
-      <div className="w-full max-w-md space-y-6 animate-in fade-in duration-700">
-        <div className="flex flex-col items-center text-center space-y-2">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600 shadow-lg shadow-indigo-600/30 text-white font-bold mb-2">
-            <Terminal className="h-6 w-6" />
+      {/* Header */}
+      <header className="sticky top-0 z-50 w-full border-b border-zinc-900 bg-zinc-950/80 backdrop-blur-md px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/30">
+            <Terminal className="h-5 w-5" />
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-zinc-50 sm:text-4xl">
-            Contoso CTMP
-          </h1>
-          <p className="text-sm text-zinc-400 max-w-xs">
-            Cloud Training Management Portal. Orchestrate sandbox lab environments at scale.
+          <span className="text-lg font-bold tracking-tight text-zinc-50">Contoso CTMP</span>
+        </div>
+        <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-zinc-400">
+          <a href="#features" className="hover:text-zinc-50 transition-colors">Features</a>
+          <a href="#architecture" className="hover:text-zinc-50 transition-colors">Architecture</a>
+          <a href="#credentials" className="hover:text-zinc-50 transition-colors">Demo Credentials</a>
+        </nav>
+        <div className="flex items-center gap-3">
+          <Link href="/admin">
+            <Button variant="ghost" className="text-zinc-400 hover:text-zinc-50 hover:bg-zinc-900 text-xs sm:text-sm">
+              Admin Portal
+            </Button>
+          </Link>
+          <Link href="/login">
+            <Button className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs sm:text-sm shadow-lg shadow-indigo-600/20">
+              Sign In
+            </Button>
+          </Link>
+        </div>
+      </header>
+
+      {/* Hero Section */}
+      <section className="max-w-6xl mx-auto px-6 pt-20 pb-24 text-center space-y-8">
+        <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-500/5 px-4 py-1.5 text-xs text-indigo-400 font-medium">
+          <ShieldCheck className="h-3.5 w-3.5" />
+          Production-Ready Cross-Cloud Federation
+        </div>
+        <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight max-w-4xl mx-auto leading-[1.1] bg-gradient-to-r from-zinc-50 via-zinc-100 to-indigo-300 bg-clip-text text-transparent">
+          Orchestrate Sandbox Lab Environments at Scale
+        </h1>
+        <p className="text-zinc-400 text-base sm:text-xl max-w-2xl mx-auto font-normal leading-relaxed">
+          Provision sandboxes, manage training cohorts, and track active student virtual machines securely using Azure Database for PostgreSQL and AWS OIDC Trust Federation.
+        </p>
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-4">
+          <Link href="/login">
+            <Button size="lg" className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-500 text-white text-base font-semibold px-8 py-6 h-12 shadow-lg shadow-indigo-600/30 flex items-center gap-2">
+              Trainer & Student Login
+              <ArrowRight className="h-5 w-5" />
+            </Button>
+          </Link>
+          <Link href="/admin">
+            <Button size="lg" variant="outline" className="w-full sm:w-auto border-zinc-800 bg-zinc-900/50 hover:bg-zinc-900 text-zinc-300 hover:text-zinc-50 text-base font-semibold px-8 py-6 h-12">
+              System Admin Entrance
+            </Button>
+          </Link>
+        </div>
+      </section>
+
+      {/* Features Grid */}
+      <section id="features" className="max-w-6xl mx-auto px-6 py-20 border-t border-zinc-900 space-y-12">
+        <div className="text-center space-y-2">
+          <h2 className="text-3xl font-bold tracking-tight">Key Capabilities</h2>
+          <p className="text-zinc-400 text-sm max-w-md mx-auto">
+            Everything you need to run audited, zero-trust cloud training classrooms.
           </p>
         </div>
-
-        <Card className="glass-card glass-card-hover border-zinc-800 bg-zinc-950/60 shadow-2xl transition-all duration-300">
-          <CardHeader className="text-center space-y-1">
-            <CardTitle className="text-xl font-bold text-zinc-50">Portal Entry</CardTitle>
-            <CardDescription className="text-xs text-zinc-400">
-              Sign in with your organization Microsoft Entra ID.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-3 gap-3 text-center py-2">
-              <div className="p-3 rounded-lg bg-zinc-900/50 border border-zinc-800/80 flex flex-col items-center">
-                <Cpu className="h-5 w-5 text-indigo-400 mb-1" />
-                <span className="text-[10px] text-zinc-400">Sandbox</span>
-              </div>
-              <div className="p-3 rounded-lg bg-zinc-900/50 border border-zinc-800/80 flex flex-col items-center">
-                <ShieldCheck className="h-5 w-5 text-emerald-400 mb-1" />
-                <span className="text-[10px] text-zinc-400">Secure</span>
-              </div>
-              <div className="p-3 rounded-lg bg-zinc-900/50 border border-zinc-800/80 flex flex-col items-center">
-                <Terminal className="h-5 w-5 text-amber-400 mb-1" />
-                <span className="text-[10px] text-zinc-400">AWS OIDC</span>
-              </div>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="p-6 rounded-xl border border-zinc-900 bg-zinc-950/40 backdrop-blur space-y-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-600/10 text-indigo-400">
+              <Cpu className="h-5 w-5" />
             </div>
-
-            <Button
-              onClick={handleLogin}
-              disabled={loading || isAuthenticated}
-              className="w-full bg-indigo-600 text-white font-semibold hover:bg-indigo-500 h-10 shadow-lg shadow-indigo-600/20 active:scale-[0.98] transition-transform duration-100 flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-              ) : (
-                <>
-                  Sign In with SSO
-                  <ArrowRight className="h-4 w-4" />
-                </>
-              )}
-            </Button>
-          </CardContent>
-          <CardFooter className="justify-center border-t border-zinc-900 py-3.5">
-            <div className="flex items-center gap-1.5 text-xs text-zinc-500">
-              <Shield className="h-3.5 w-3.5" />
-              Compliance and auditing enforced
+            <h3 className="text-lg font-bold">One-Step Setup</h3>
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              Create a training cohort, set AWS resource limits, and auto-generate student login credentials or login links in a single operation.
+            </p>
+          </div>
+          <div className="p-6 rounded-xl border border-zinc-900 bg-zinc-950/40 backdrop-blur space-y-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-600/10 text-emerald-400">
+              <Cloud className="h-5 w-5" />
             </div>
-          </CardFooter>
-        </Card>
-      </div>
+            <h3 className="text-lg font-bold">AWS OIDC Federation</h3>
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              Securely authenticate via Microsoft Entra ID and perform EC2 lifecycle actions using temporary credentials from AWS Security Token Service.
+            </p>
+          </div>
+          <div className="p-6 rounded-xl border border-zinc-900 bg-zinc-950/40 backdrop-blur space-y-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600/10 text-blue-400">
+              <Database className="h-5 w-5" />
+            </div>
+            <h3 className="text-lg font-bold">PostgreSQL Backend</h3>
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              Robust data layer running on Azure Database for PostgreSQL Flexible Server, secured with TLS encryption and isolated subnets.
+            </p>
+          </div>
+          <div className="p-6 rounded-xl border border-zinc-900 bg-zinc-950/40 backdrop-blur space-y-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-600/10 text-amber-400">
+              <Key className="h-5 w-5" />
+            </div>
+            <h3 className="text-lg font-bold">Key Vault Secrets</h3>
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              Zero hardcoded secrets. Key database credentials, tokens, and SSL certificates are dynamically fetched from Azure Key Vault.
+            </p>
+          </div>
+          <div className="p-6 rounded-xl border border-zinc-900 bg-zinc-950/40 backdrop-blur space-y-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-rose-600/10 text-rose-400">
+              <BarChart3 className="h-5 w-5" />
+            </div>
+            <h3 className="text-lg font-bold">Billing Tracking</h3>
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              Real-time cost telemetry mapping back to specific student workloads, enabling automated budgets and warning alerts.
+            </p>
+          </div>
+          <div className="p-6 rounded-xl border border-zinc-900 bg-zinc-950/40 backdrop-blur space-y-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-600/10 text-indigo-400">
+              <Shield className="h-5 w-5" />
+            </div>
+            <h3 className="text-lg font-bold">WAF Protection</h3>
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              Application Gateway WAF v2 handles all traffic, protecting APIs from OWASP Top 10 vulnerabilities in Prevention mode.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Demo Credentials Section */}
+      <section id="credentials" className="max-w-4xl mx-auto px-6 py-12 mb-20 border border-zinc-800 bg-zinc-950/50 rounded-xl space-y-6">
+        <div className="flex items-center gap-2">
+          <Key className="h-5 w-5 text-indigo-400" />
+          <h2 className="text-xl font-bold">Demo Login Credentials</h2>
+        </div>
+        <p className="text-sm text-zinc-400">
+          Use the following pre-seeded credentials to explore the portal features after clicking Sign In:
+        </p>
+        <div className="grid gap-4 sm:grid-cols-3 text-sm">
+          <div className="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800 space-y-2">
+            <span className="font-semibold text-indigo-400 text-xs uppercase tracking-wider block">Admin Portal</span>
+            <div className="space-y-1 text-xs text-zinc-300 font-mono">
+              <p>Username: admin1</p>
+              <p>Password: Password123</p>
+            </div>
+          </div>
+          <div className="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800 space-y-2">
+            <span className="font-semibold text-indigo-400 text-xs uppercase tracking-wider block">Trainer Portal</span>
+            <div className="space-y-1 text-xs text-zinc-300 font-mono">
+              <p>Username: trainer1</p>
+              <p>Password: Password123</p>
+            </div>
+          </div>
+          <div className="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800 space-y-2">
+            <span className="font-semibold text-indigo-400 text-xs uppercase tracking-wider block">Student Portal</span>
+            <div className="space-y-1 text-xs text-zinc-300 font-mono">
+              <p>Username: student1</p>
+              <p>Password: Password123</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-zinc-900 py-8 text-center text-xs text-zinc-500">
+        &copy; {new Date().getFullYear()} Contoso Cloud. All rights reserved. Enforced security and compliance logs.
+      </footer>
     </div>
   )
 }

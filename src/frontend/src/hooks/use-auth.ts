@@ -27,6 +27,31 @@ export function useAuth(): AuthUser {
   const { accounts } = useMsal();
 
   return useMemo(() => {
+    // 1. Check local session storage first (for local credentials/invites)
+    if (typeof window !== "undefined") {
+      const localUserStr = localStorage.getItem("ctmp_user");
+      const localToken = localStorage.getItem("ctmp_token");
+      if (localUserStr && localToken) {
+        try {
+          const localUser = JSON.parse(localUserStr);
+          const roles = localUser.roles || [];
+          return {
+            name: localUser.name || "User",
+            email: localUser.email || "",
+            roles,
+            isAdmin: roles.includes("Admin"),
+            isTrainer: roles.includes("Trainer"),
+            isStudent: roles.includes("Student"),
+            isAuthenticated: true,
+            userId: localUser.sub || localUser.id || "",
+          };
+        } catch (e) {
+          console.error("Failed to parse local user session", e);
+        }
+      }
+    }
+
+    // 2. Fallback to MSAL (Single Sign-On)
     if (accounts.length === 0) {
       return {
         name: "",

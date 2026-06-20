@@ -44,3 +44,14 @@ class HealthResponse(BaseModel):
     """Health check response."""
 
     status: str = Field(..., description="Service health status")
+
+
+class LoginRequest(BaseModel):
+    username: str = Field(..., description="Local account username")
+    password: str = Field(..., description="Password")
+
+
+class LoginResponse(BaseModel):
+    token: str = Field(..., description="Session token")
+    user: UserProfile = Field(..., description="Decoded user profile")
+

@@ -44,6 +44,12 @@ output "jumpbox_subnet_id" {
   value       = azurerm_subnet.jumpbox.id
 }
 
+output "pg_subnet_id" {
+  description = "Resource ID of the PostgreSQL delegated subnet."
+  value       = azurerm_subnet.pg.id
+}
+
+
 # --- NSG IDs ---
 output "appgw_nsg_id" {
   description = "Resource ID of the Application Gateway NSG."

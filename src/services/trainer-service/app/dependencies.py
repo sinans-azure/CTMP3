@@ -57,6 +57,33 @@ async def get_current_user(
     """Validate Entra ID JWT token and return decoded claims."""
     token = credentials.credentials
 
+    if token.startswith("mock-"):
+        from app.database import SessionLocal, User
+        parts = token.split("-")
+        if len(parts) >= 2:
+            user_id = parts[1]
+            db = SessionLocal()
+            try:
+                user = db.query(User).filter(User.id == user_id).first()
+                if user:
+                    return {
+                        "sub": user.id,
+                        "name": user.name,
+                        "email": user.email,
+                        "preferred_username": user.username,
+                        "roles": [user.role],
+                        "groups": [g.id for g in user.groups],
+                        "tid": "mock-tenant",
+                        "oid": user.id
+                    }
+            finally:
+                db.close()
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid mock token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     try:
         jwks = await _fetch_jwks(settings)
         signing_key = _get_signing_key(token, jwks)

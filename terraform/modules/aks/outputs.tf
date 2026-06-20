@@ -69,3 +69,8 @@ output "aks_node_resource_group" {
   description = "Name of the auto-generated node resource group."
   value       = azurerm_kubernetes_cluster.main.node_resource_group
 }
+
+output "agic_identity_object_id" {
+  description = "Object ID of the AGIC managed identity."
+  value       = azurerm_kubernetes_cluster.main.ingress_application_gateway[0].ingress_application_gateway_identity[0].object_id
+}

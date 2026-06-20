@@ -135,3 +135,18 @@ output "key_vault_id" {
   value       = module.key_vault.key_vault_id
 }
 
+# -----------------------------------------------------------------------------
+# Database
+# -----------------------------------------------------------------------------
+
+output "database_fqdn" {
+  description = "Fully Qualified Domain Name of the PostgreSQL server."
+  value       = module.database.server_fqdn
+}
+
+output "database_name" {
+  description = "Name of the created database."
+  value       = module.database.database_name
+}
+
+

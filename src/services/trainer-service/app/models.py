@@ -53,3 +53,30 @@ class HealthResponse(BaseModel):
     """Health check response."""
 
     status: str
+
+
+class CreateGroupAndStudentsRequest(BaseModel):
+    name: str = Field(..., description="Group name")
+    description: str = Field(default="", description="Group description")
+    aws_account_id: str = Field(default="", description="Associated AWS Account ID")
+    aws_region: str = Field(default="us-east-1", description="AWS Region")
+    student_emails: list[str] = Field(default_factory=list, description="List of student emails to register")
+    auto_generate_count: int = Field(default=0, ge=0, le=50, description="Number of random student accounts to auto-generate")
+    max_instances_per_student: int = Field(default=2, ge=1, le=5, description="Max EC2 instances per student")
+
+
+class GeneratedStudentCredentials(BaseModel):
+    id: str = Field(..., description="Student user ID")
+    username: str = Field(..., description="Login username")
+    password: str = Field(..., description="Plain-text password to share")
+    name: str = Field(..., description="Display name")
+    invite_token: str = Field(..., description="Invitation token")
+    login_link: str = Field(..., description="Direct auto-login URL")
+
+
+class CreateGroupAndStudentsResponse(BaseModel):
+    group_id: str = Field(..., description="Group ID")
+    name: str = Field(..., description="Group name")
+    student_count: int = Field(..., description="Total student count in group")
+    created_students: list[GeneratedStudentCredentials] = Field(default_factory=list, description="Credentials for generated students")
+

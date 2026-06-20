@@ -141,6 +141,12 @@ resource "azurerm_role_assignment" "appgw_kv_secrets_user" {
   principal_id         = module.app_gateway.identity_principal_id
 }
 
+resource "azurerm_role_assignment" "agic_appgw_mi_operator" {
+  scope                = module.app_gateway.identity_resource_id
+  role_definition_name = "Managed Identity Operator"
+  principal_id         = module.aks.agic_identity_object_id
+}
+
 
 # =============================================================================
 # Module: Key Vault
@@ -266,6 +272,26 @@ module "jumpbox" {
   tags                 = local.common_tags
   subnet_id            = module.networking.jumpbox_subnet_id
 }
+
+# =============================================================================
+# Module: Database
+# =============================================================================
+# Provisions Azure Database for PostgreSQL Flexible Server within private VNet.
+# =============================================================================
+
+module "database" {
+  source = "./modules/database"
+
+  resource_group_name = azurerm_resource_group.main.name
+  location            = var.location
+  prefix              = var.prefix
+  tags                = local.common_tags
+
+  pg_subnet_id = module.networking.pg_subnet_id
+  vnet_id      = module.networking.vnet_id
+  key_vault_id = module.key_vault.key_vault_id
+}
+
 
 # =============================================================================
 # DNS A Record — Point domain to App Gateway public IP

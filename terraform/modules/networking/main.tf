@@ -102,6 +102,26 @@ resource "azurerm_subnet" "jumpbox" {
   address_prefixes     = [var.jumpbox_subnet_cidr]
 }
 
+# PostgreSQL Flexible Server delegated subnet
+resource "azurerm_subnet" "pg" {
+  name                 = "${var.prefix}-pg-subnet"
+  resource_group_name  = var.resource_group_name
+  virtual_network_name = azurerm_virtual_network.main.name
+  address_prefixes     = [var.pg_subnet_cidr]
+
+  delegation {
+    name = "pg-delegation"
+
+    service_delegation {
+      name = "Microsoft.DBforPostgreSQL/flexibleServers"
+      actions = [
+        "Microsoft.Network/virtualNetworks/subnets/join/action",
+      ]
+    }
+  }
+}
+
+
 # =============================================================================
 # Network Security Groups
 # =============================================================================

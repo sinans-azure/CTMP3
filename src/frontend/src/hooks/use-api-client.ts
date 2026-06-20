@@ -24,6 +24,15 @@ export function useApiClient(): ApiClient {
   const { instance, accounts } = useMsal();
 
   const getAccessToken = useCallback(async (): Promise<string> => {
+    // 1. Check local session token first
+    if (typeof window !== "undefined") {
+      const localToken = localStorage.getItem("ctmp_token");
+      if (localToken) {
+        return localToken;
+      }
+    }
+
+    // 2. Fallback to MSAL
     if (accounts.length === 0) {
       throw new Error("No authenticated account found");
     }

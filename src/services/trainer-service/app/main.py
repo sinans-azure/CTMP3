@@ -22,6 +22,8 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("trainer-service starting up")
+    from app.database import init_db
+    init_db()
     yield
     logger.info("trainer-service shutting down")
 

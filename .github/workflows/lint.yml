@@ -1,0 +1,59 @@
+name: "Lint & Validate Manifests"
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: "Lint & Validate"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate Python syntax
+        run: |
+          find src/services -name "*.py" -exec python -m py_compile {} \;
+          find src/functions -name "*.py" -exec python -m py_compile {} \;
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Validate Kubernetes manifests
+        run: |
+          echo "Validating K8s YAML syntax..."
+          find gitops/manifests -name "*.yaml" -exec python -c "
+          import yaml, sys
+          with open(sys.argv[1]) as f:
+              try:
+                  list(yaml.safe_load_all(f))
+                  print(f'✅ {sys.argv[1]}')
+              except yaml.YAMLError as e:
+                  print(f'❌ {sys.argv[1]}: {e}')
+                  sys.exit(1)
+          " {} \;
+
+      - name: Validate GitOps manifests
+        run: |
+          pip install pyyaml
+          find gitops -name "*.yaml" -exec python -c "
+          import yaml, sys
+          with open(sys.argv[1]) as f:
+              try:
+                  list(yaml.safe_load_all(f))
+                  print(f'✅ {sys.argv[1]}')
+              except yaml.YAMLError as e:
+                  print(f'❌ {sys.argv[1]}: {e}')
+                  sys.exit(1)
+          " {} \;

@@ -37,3 +37,8 @@ output "identity_principal_id" {
   value       = azurerm_user_assigned_identity.appgw.principal_id
 }
 
+output "identity_resource_id" {
+  description = "Resource ID of the Application Gateway User-Assigned Managed Identity."
+  value       = azurerm_user_assigned_identity.appgw.id
+}
+

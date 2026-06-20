@@ -3,7 +3,7 @@
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from jose import JWTError, jwt
 
 from app.config import Settings, get_settings
@@ -13,6 +13,8 @@ from app.models import (
     TokenValidationRequest,
     TokenValidationResponse,
     UserProfile,
+    LoginRequest,
+    LoginResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -84,3 +86,68 @@ async def get_user_roles(
         is_trainer="Trainer" in roles,
         is_student="Student" in roles,
     )
+
+
+@router.post("/login", response_model=LoginResponse)
+async def login(body: LoginRequest) -> LoginResponse:
+    """Authenticate users with local credentials and return profile & mock token."""
+    from app.database import SessionLocal, User
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.username == body.username).first()
+        if not user or not user.verify_password(body.password):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid username or password",
+            )
+        
+        profile = UserProfile(
+            sub=user.id,
+            name=user.name or user.username,
+            email=user.email or "",
+            preferred_username=user.username,
+            roles=[user.role],
+            groups=[g.id for g in user.groups],
+            tenant_id="mock-tenant",
+            oid=user.id
+        )
+        
+        return LoginResponse(
+            token=f"mock-{user.id}",
+            user=profile
+        )
+    finally:
+        db.close()
+
+
+@router.get("/invite", response_model=LoginResponse)
+async def invite(token: str = Query(..., description="Invitation/auto-login token")) -> LoginResponse:
+    """Verify an invitation token and automatically sign in the user."""
+    from app.database import SessionLocal, User
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.invite_token == token).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid invitation token",
+            )
+        
+        profile = UserProfile(
+            sub=user.id,
+            name=user.name or user.username,
+            email=user.email or "",
+            preferred_username=user.username,
+            roles=[user.role],
+            groups=[g.id for g in user.groups],
+            tenant_id="mock-tenant",
+            oid=user.id
+        )
+        
+        return LoginResponse(
+            token=f"mock-{user.id}",
+            user=profile
+        )
+    finally:
+        db.close()
+
