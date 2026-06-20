@@ -141,11 +141,7 @@ resource "azurerm_role_assignment" "appgw_kv_secrets_user" {
   principal_id         = module.app_gateway.identity_principal_id
 }
 
-resource "azurerm_role_assignment" "agic_appgw_mi_operator" {
-  scope                = module.app_gateway.identity_resource_id
-  role_definition_name = "Managed Identity Operator"
-  principal_id         = module.aks.agic_identity_object_id
-}
+
 
 
 # =============================================================================
