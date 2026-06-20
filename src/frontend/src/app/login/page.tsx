@@ -1,16 +1,17 @@
 "use client"
 
 import * as React from "react"
+import { Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useMsal } from "@azure/msal-react"
-import { loginRequest } from "@/lib/msal-config"
+import { loginRequest, API_BASE_URL } from "@/lib/msal-config"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Terminal, Shield, ArrowRight, ShieldCheck, Cpu, AlertCircle } from "lucide-react"
 
-export default function LoginPage() {
+function LoginContent() {
   const { instance } = useMsal()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -27,7 +28,7 @@ export default function LoginPage() {
       setTokenLoading(true)
       const verifyToken = async () => {
         try {
-          const res = await fetch(`https://api.training.sneakertail.online/api/auth/invite?token=${inviteToken}`)
+          const res = await fetch(`${API_BASE_URL}/api/auth/invite?token=${inviteToken}`)
           if (!res.ok) {
             throw new Error("Invalid token")
           }
@@ -54,7 +55,7 @@ export default function LoginPage() {
     setLoading(true)
     setError("")
     try {
-      const res = await fetch("https://api.training.sneakertail.online/api/auth/login", {
+      const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password })
@@ -198,3 +199,16 @@ export default function LoginPage() {
     </div>
   )
 }
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-950 text-zinc-50">
+        <span className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
+  )
+}
+

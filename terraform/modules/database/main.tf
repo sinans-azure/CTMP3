@@ -39,6 +39,8 @@ resource "azurerm_postgresql_flexible_server" "main" {
   storage_mb = 32768
   sku_name   = var.sku_name
 
+  public_network_access_enabled = false
+
   backup_retention_days        = 7
   geo_redundant_backup_enabled = false
   auto_grow_enabled            = true

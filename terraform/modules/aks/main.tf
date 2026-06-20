@@ -207,11 +207,7 @@ resource "azurerm_role_assignment" "agic_appgw_subnet" {
   principal_id         = azurerm_kubernetes_cluster.main.ingress_application_gateway[0].ingress_application_gateway_identity[0].object_id
 }
 
-resource "azurerm_role_assignment" "agic_appgw_contributor" {
-  scope                = var.appgw_id
-  role_definition_name = "Contributor"
-  principal_id         = azurerm_kubernetes_cluster.main.ingress_application_gateway[0].ingress_application_gateway_identity[0].object_id
-}
+
 
 # =============================================================================
 # AKS — Network Contributor on AKS subnet
@@ -240,15 +236,7 @@ resource "azurerm_role_assignment" "aks_api_subnet_contributor" {
 # IP properties.
 # =============================================================================
 
-data "azurerm_resource_group" "main" {
-  name = var.resource_group_name
-}
 
-resource "azurerm_role_assignment" "agic_rg_reader" {
-  scope                = data.azurerm_resource_group.main.id
-  role_definition_name = "Reader"
-  principal_id         = azurerm_kubernetes_cluster.main.ingress_application_gateway[0].ingress_application_gateway_identity[0].object_id
-}
 
 
 

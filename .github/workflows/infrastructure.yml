@@ -39,6 +39,32 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Get Runner IP and Key Vault Name
+        run: |
+          RUNNER_IP=$(curl -s https://api.ipify.org)
+          echo "RUNNER_IP=$RUNNER_IP" >> $GITHUB_ENV
+          
+          # Find the Key Vault name
+          echo "Searching for Key Vault name..."
+          KEY_VAULT_NAME=$(az keyvault list --query "[?contains(name, 'ctmp3-kv')].name" -o tsv | head -n 1)
+          if [ -z "$KEY_VAULT_NAME" ]; then
+            KEY_VAULT_NAME=$(az keyvault list --query "[?tags.project=='ctmp3'].name" -o tsv | head -n 1)
+          fi
+          if [ -n "$KEY_VAULT_NAME" ]; then
+            echo "KEY_VAULT_NAME=$KEY_VAULT_NAME" >> $GITHUB_ENV
+            echo "Found Key Vault Name: $KEY_VAULT_NAME"
+          else
+            echo "Key Vault not found (it might not be created yet)."
+          fi
+
+      - name: Whitelist IP in Key Vault
+        if: env.KEY_VAULT_NAME != ''
+        run: |
+          echo "Adding firewall rule for IP ${{ env.RUNNER_IP }} on Key Vault ${{ env.KEY_VAULT_NAME }}..."
+          az keyvault network-rule add --name "${{ env.KEY_VAULT_NAME }}" --ip-address "${{ env.RUNNER_IP }}"
+          # Sleep to allow rule propagation
+          sleep 10
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
@@ -106,3 +132,9 @@ jobs:
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: terraform apply -auto-approve tfplan
+
+      - name: Remove IP from Key Vault Firewall
+        if: always() && env.RUNNER_IP != '' && env.KEY_VAULT_NAME != ''
+        run: |
+          echo "Removing firewall rule for IP ${{ env.RUNNER_IP }} from Key Vault ${{ env.KEY_VAULT_NAME }}..."
+          az keyvault network-rule remove --name "${{ env.KEY_VAULT_NAME }}" --ip-address "${{ env.RUNNER_IP }}"
