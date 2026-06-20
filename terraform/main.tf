@@ -164,6 +164,7 @@ module "key_vault" {
   private_dns_zone_id = module.networking.keyvault_private_dns_zone_id
 
   key_vault_admin_object_ids = [data.azurerm_client_config.current.object_id]
+  runner_ip                  = var.runner_ip
 }
 
 # =============================================================================

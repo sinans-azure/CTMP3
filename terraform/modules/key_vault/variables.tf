@@ -71,3 +71,9 @@ variable "key_vault_reader_object_ids" {
   type        = list(string)
   default     = []
 }
+
+variable "runner_ip" {
+  description = "The public IP of the GitHub Actions runner to temporarily whitelist in the Key Vault firewall."
+  type        = string
+  default     = ""
+}

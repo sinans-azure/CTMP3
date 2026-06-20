@@ -126,5 +126,11 @@ variable "acr_name" {
   default     = "ctmp3acr"
 }
 
+variable "runner_ip" {
+  description = "The public IP of the GitHub Actions runner to temporarily whitelist in the Key Vault firewall."
+  type        = string
+  default     = ""
+}
+
 
 

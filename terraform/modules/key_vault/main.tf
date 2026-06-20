@@ -35,6 +35,7 @@ resource "azurerm_key_vault" "main" {
   network_acls {
     default_action = "Deny"
     bypass         = "AzureServices"
+    ip_rules       = var.runner_ip != "" ? [var.runner_ip] : []
   }
 }
 

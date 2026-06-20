@@ -41,14 +41,15 @@ jobs:
 
       - name: Get Runner IP and Key Vault Name
         run: |
-          RUNNER_IP=$(curl -s https://api.ipify.org)
+          RUNNER_IP=$(curl -s https://api.ipify.org | tr -d '\r')
           echo "RUNNER_IP=$RUNNER_IP" >> $GITHUB_ENV
+          echo "TF_VAR_runner_ip=$RUNNER_IP" >> $GITHUB_ENV
           
           # Find the Key Vault name
           echo "Searching for Key Vault name..."
-          KEY_VAULT_NAME=$(az keyvault list --query "[?contains(name, 'ctmp3-kv')].name" -o tsv | head -n 1)
+          KEY_VAULT_NAME=$(az keyvault list --query "[?contains(name, 'ctmp3-kv')].name" -o tsv | head -n 1 | tr -d '\r')
           if [ -z "$KEY_VAULT_NAME" ]; then
-            KEY_VAULT_NAME=$(az keyvault list --query "[?tags.project=='ctmp3'].name" -o tsv | head -n 1)
+            KEY_VAULT_NAME=$(az keyvault list --query "[?tags.project=='ctmp3'].name" -o tsv | head -n 1 | tr -d '\r')
           fi
           if [ -n "$KEY_VAULT_NAME" ]; then
             echo "KEY_VAULT_NAME=$KEY_VAULT_NAME" >> $GITHUB_ENV
@@ -63,7 +64,7 @@ jobs:
           echo "Adding firewall rule for IP ${{ env.RUNNER_IP }} on Key Vault ${{ env.KEY_VAULT_NAME }}..."
           az keyvault network-rule add --name "${{ env.KEY_VAULT_NAME }}" --ip-address "${{ env.RUNNER_IP }}"
           # Sleep to allow rule propagation
-          sleep 10
+          sleep 60
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
