@@ -4,48 +4,43 @@ from datetime import datetime
 from sqlalchemy import create_engine, Column, String, Integer, DateTime, ForeignKey, Table, Float
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 
-DATABASE_URL = os.environ.get("DATABASE_URL") or os.environ.get("PG_CONNECTION_STRING") or "sqlite:///shared_ctmp.db"
+DATABASE_URL = os.environ.get("DATABASE_URL") or os.environ.get("PG_CONNECTION_STRING")
 
-if DATABASE_URL.startswith("sqlite"):
-    # Convert absolute paths to work with Windows/Unix uniformly
-    db_path = DATABASE_URL
-    if db_path == "sqlite:///shared_ctmp.db":
-        # Put in a temporary shared path or workspace root for development
-        db_path = "sqlite:///../shared_ctmp.db"
-    engine = create_engine(db_path, connect_args={"check_same_thread": False})
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL or PG_CONNECTION_STRING environment variable is required")
+
+if os.environ.get("USE_ENTRA_DB_AUTH", "").lower() == "true":
+    from azure.identity import DefaultAzureCredential
+    from urllib.parse import urlparse
+    import psycopg2
+    
+    parsed = urlparse(DATABASE_URL)
+    db_host = parsed.hostname
+    db_name = parsed.path.lstrip("/")
+    db_port = parsed.port or 5432
+    db_user = os.environ.get("DB_USER") or parsed.username or "ctmp3-workload-identity"
+    
+    credential = DefaultAzureCredential()
+    
+    def get_conn():
+        token_obj = credential.get_token("https://ossrdbms-aad.database.windows.net/.default")
+        return psycopg2.connect(
+            host=db_host,
+            port=db_port,
+            database=db_name,
+            user=db_user,
+            password=token_obj.token,
+            sslmode="require"
+        )
+    
+    engine = create_engine("postgresql+psycopg2://", creator=get_conn, pool_pre_ping=True)
 else:
-    if os.environ.get("USE_ENTRA_DB_AUTH", "").lower() == "true":
-        from azure.identity import DefaultAzureCredential
-        from urllib.parse import urlparse
-        import psycopg2
-        
-        parsed = urlparse(DATABASE_URL)
-        db_host = parsed.hostname
-        db_name = parsed.path.lstrip("/")
-        db_port = parsed.port or 5432
-        db_user = os.environ.get("DB_USER") or parsed.username or "ctmp3-workload-identity"
-        
-        credential = DefaultAzureCredential()
-        
-        def get_conn():
-            token_obj = credential.get_token("https://ossrdbms-aad.database.windows.net/.default")
-            return psycopg2.connect(
-                host=db_host,
-                port=db_port,
-                database=db_name,
-                user=db_user,
-                password=token_obj.token,
-                sslmode="require"
-            )
-        
-        engine = create_engine("postgresql+psycopg2://", creator=get_conn, pool_pre_ping=True)
-    else:
-        if "sslmode" not in DATABASE_URL:
-            if "?" in DATABASE_URL:
-                DATABASE_URL += "&sslmode=require"
-            else:
-                DATABASE_URL += "?sslmode=require"
-        engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+    if "sslmode" not in DATABASE_URL:
+        if "?" in DATABASE_URL:
+            DATABASE_URL += "&sslmode=require"
+        else:
+            DATABASE_URL += "?sslmode=require"
+    engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
