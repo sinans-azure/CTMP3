@@ -47,7 +47,7 @@ resource "azurerm_postgresql_flexible_server" "main" {
 
   authentication {
     active_directory_auth_enabled = true
-    password_auth_enabled         = true
+    password_auth_enabled         = false
     tenant_id                     = var.tenant_id
   }
 
@@ -80,14 +80,8 @@ resource "azurerm_postgresql_flexible_server_database" "main" {
   charset   = "utf8"
 }
 
-resource "azurerm_key_vault_secret" "pg_password" {
-  name         = "pg-admin-password"
-  value        = random_password.pg_admin_password.result
-  key_vault_id = var.key_vault_id
-}
-
 resource "azurerm_key_vault_secret" "pg_conn_str" {
   name         = "pg-connection-string"
-  value        = "postgresql://${var.admin_username}:${random_password.pg_admin_password.result}@${azurerm_postgresql_flexible_server.main.fqdn}/${var.db_name}"
+  value        = "postgresql://${var.workload_identity_name}@${azurerm_postgresql_flexible_server.main.fqdn}/${var.db_name}"
   key_vault_id = var.key_vault_id
 }
