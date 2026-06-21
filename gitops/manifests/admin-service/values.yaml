@@ -41,7 +41,7 @@ env:
   DB_USER: "ctmp3-workload-identity"
 
 keyvaultName: "ctmp3-kv"
-tenantId: "YOUR_AZURE_TENANT_ID_PLACEHOLDER"
+tenantId: "3e054dd4-88ff-476b-a5bc-14338ac07215"
 
 configMapName: admin-service-config
 secretName: admin-service-secrets
