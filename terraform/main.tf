@@ -281,12 +281,11 @@ resource "azurerm_user_assigned_identity" "workload" {
 }
 
 resource "azurerm_federated_identity_credential" "workload" {
-  name                = "${var.prefix}-workload-fed-cred"
-  resource_group_name = azurerm_resource_group.main.name
-  audience            = ["api://AzureADTokenExchange"]
-  issuer              = module.aks.aks_oidc_issuer_url
-  parent_id           = azurerm_user_assigned_identity.workload.id
-  subject             = "system:serviceaccount:training-portal:ctmp-workload-sa"
+  name                       = "${var.prefix}-workload-fed-cred"
+  audience                   = ["api://AzureADTokenExchange"]
+  issuer                     = module.aks.aks_oidc_issuer_url
+  user_assigned_identity_id  = azurerm_user_assigned_identity.workload.id
+  subject                    = "system:serviceaccount:training-portal:ctmp-workload-sa"
 }
 
 resource "azurerm_role_assignment" "workload_kv_secrets_user" {

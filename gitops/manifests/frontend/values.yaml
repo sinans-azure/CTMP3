@@ -1,0 +1,38 @@
+replicaCount: 1
+
+image:
+  repository: ctmp3acr.azurecr.io/frontend
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 3000
+
+ingress:
+  enabled: true
+  className: azure-application-gateway
+  annotations:
+    kubernetes.io/ingress.class: azure/application-gateway
+    appgw.ingress.kubernetes.io/backend-path-prefix: /
+    appgw.ingress.kubernetes.io/health-probe-path: /
+    appgw.ingress.kubernetes.io/ssl-redirect: "true"
+    appgw.ingress.kubernetes.io/appgw-ssl-certificate: "sneakertail-cert"
+  hosts:
+    - host: training.sneakertail.online
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: sneakertail-cert
+      hosts:
+        - training.sneakertail.online
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi

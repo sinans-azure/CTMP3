@@ -1,53 +1,49 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: auth-service
-  namespace: training-portal
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace | default "training-portal" }}
   labels:
-    app.kubernetes.io/name: auth-service
+    app.kubernetes.io/name: {{ .Release.Name }}
     app.kubernetes.io/component: api
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: auth-service
+      app.kubernetes.io/name: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: auth-service
+        app.kubernetes.io/name: {{ .Release.Name }}
         app.kubernetes.io/component: api
         azure.workload.identity/use: "true"
     spec:
       serviceAccountName: ctmp-workload-sa
       containers:
-        - name: auth-service
-          image: ctmp3acr.azurecr.io/auth-service:latest
+        - name: {{ .Release.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - containerPort: 8000
+            - containerPort: {{ .Values.service.targetPort }}
               protocol: TCP
           resources:
-            requests:
-              cpu: 250m
-              memory: 256Mi
-            limits:
-              cpu: 500m
-              memory: 512Mi
+            {{- toYaml .Values.resources | nindent 12 }}
           env:
             - name: USE_ENTRA_DB_AUTH
-              value: "true"
+              value: "{{ .Values.env.USE_ENTRA_DB_AUTH }}"
             - name: DB_USER
-              value: "ctmp3-workload-identity"
+              value: "{{ .Values.env.DB_USER }}"
           envFrom:
             - configMapRef:
-                name: auth-service-config
+                name: {{ .Values.configMapName }}
                 optional: true
             - secretRef:
-                name: auth-service-secrets
+                name: {{ .Values.secretName }}
                 optional: true
           livenessProbe:
             httpGet:
               path: /health
-              port: 8000
+              port: {{ .Values.service.targetPort }}
             initialDelaySeconds: 10
             periodSeconds: 30
             timeoutSeconds: 5
@@ -55,7 +51,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /health/ready
-              port: 8000
+              port: {{ .Values.service.targetPort }}
             initialDelaySeconds: 5
             periodSeconds: 10
             timeoutSeconds: 3

@@ -12,7 +12,10 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "1"
     argocd-image-updater.argoproj.io/image-list: trainer=ctmp3acr.azurecr.io/trainer-service
-    argocd-image-updater.argoproj.io/trainer.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/trainer.update-strategy: semver
+    argocd-image-updater.argoproj.io/trainer.allow-tags: regexp:^0\.0\.[0-9]+$
+    argocd-image-updater.argoproj.io/trainer.helm.image-name: image.repository
+    argocd-image-updater.argoproj.io/trainer.helm.image-tag: image.tag
     argocd-image-updater.argoproj.io/trainer.force-update: "true"
     argocd-image-updater.argoproj.io/write-back-method: git
   finalizers:

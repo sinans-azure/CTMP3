@@ -12,7 +12,10 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "1"
     argocd-image-updater.argoproj.io/image-list: analytics=ctmp3acr.azurecr.io/analytics-service
-    argocd-image-updater.argoproj.io/analytics.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/analytics.update-strategy: semver
+    argocd-image-updater.argoproj.io/analytics.allow-tags: regexp:^0\.0\.[0-9]+$
+    argocd-image-updater.argoproj.io/analytics.helm.image-name: image.repository
+    argocd-image-updater.argoproj.io/analytics.helm.image-tag: image.tag
     argocd-image-updater.argoproj.io/analytics.force-update: "true"
     argocd-image-updater.argoproj.io/write-back-method: git
   finalizers:
