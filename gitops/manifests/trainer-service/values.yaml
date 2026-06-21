@@ -40,5 +40,8 @@ env:
   USE_ENTRA_DB_AUTH: "true"
   DB_USER: "ctmp3-workload-identity"
 
+keyvaultName: "ctmp3-kv"
+tenantId: "YOUR_AZURE_TENANT_ID_PLACEHOLDER"
+
 configMapName: trainer-service-config
 secretName: trainer-service-secrets

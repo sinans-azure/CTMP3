@@ -16,7 +16,6 @@ spec:
       labels:
         app.kubernetes.io/name: {{ .Release.Name }}
         app.kubernetes.io/component: api
-        azure.workload.identity/use: "true"
     spec:
       serviceAccountName: ctmp-workload-sa
       containers:
@@ -33,6 +32,17 @@ spec:
               value: "{{ .Values.env.USE_ENTRA_DB_AUTH }}"
             - name: DB_USER
               value: "{{ .Values.env.DB_USER }}"
+            - name: AZURE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secretName }}
+                  key: AZURE_CLIENT_ID
+            - name: AZURE_TENANT_ID
+              value: "{{ .Values.tenantId }}"
+            - name: AZURE_FEDERATED_TOKEN_FILE
+              value: "/var/run/secrets/azure/tokens/azure-identity-token"
+            - name: AZURE_AUTHORITY_HOST
+              value: "https://login.microsoftonline.com/"
           envFrom:
             - configMapRef:
                 name: {{ .Values.configMapName }}
@@ -63,7 +73,27 @@ spec:
           volumeMounts:
             - name: tmp
               mountPath: /tmp
+            - name: secrets-store-inline
+              mountPath: "/mnt/secrets"
+              readOnly: true
+            - name: azure-identity-token
+              mountPath: "/var/run/secrets/azure/tokens"
+              readOnly: true
       volumes:
         - name: tmp
           emptyDir: {}
+        - name: secrets-store-inline
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "{{ .Release.Name }}-secrets-provider"
+        - name: azure-identity-token
+          projected:
+            defaultMode: 420
+            sources:
+              - serviceAccountToken:
+                  audience: api://AzureADTokenExchange
+                  expirationSeconds: 3600
+                  path: azure-identity-token
       restartPolicy: Always
