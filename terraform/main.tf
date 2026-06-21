@@ -271,6 +271,31 @@ module "jumpbox" {
 }
 
 # =============================================================================
+# Workload Identity & Pod Federation
+# =============================================================================
+resource "azurerm_user_assigned_identity" "workload" {
+  name                = "${var.prefix}-workload-identity"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = var.location
+  tags                = local.common_tags
+}
+
+resource "azurerm_federated_identity_credential" "workload" {
+  name                = "${var.prefix}-workload-fed-cred"
+  resource_group_name = azurerm_resource_group.main.name
+  audience            = ["api://AzureADTokenExchange"]
+  issuer              = module.aks.aks_oidc_issuer_url
+  parent_id           = azurerm_user_assigned_identity.workload.id
+  subject             = "system:serviceaccount:training-portal:ctmp-workload-sa"
+}
+
+resource "azurerm_role_assignment" "workload_kv_secrets_user" {
+  scope                = module.key_vault.key_vault_id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = azurerm_user_assigned_identity.workload.principal_id
+}
+
+# =============================================================================
 # Module: Database
 # =============================================================================
 # Provisions Azure Database for PostgreSQL Flexible Server within private VNet.
@@ -287,6 +312,10 @@ module "database" {
   pg_subnet_id = module.networking.pg_subnet_id
   vnet_id      = module.networking.vnet_id
   key_vault_id = module.key_vault.key_vault_id
+
+  tenant_id                      = data.azurerm_client_config.current.tenant_id
+  workload_identity_principal_id = azurerm_user_assigned_identity.workload.principal_id
+  workload_identity_name         = azurerm_user_assigned_identity.workload.name
 }
 
 

@@ -41,11 +41,11 @@ export const msalConfig: Configuration = {
 };
 
 export const loginRequest = {
-  scopes: [`api://${clientId}/access_as_user`],
+  scopes: ["openid", "profile", "email"],
 };
 
 export const apiScopes = {
-  scopes: [`api://${clientId}/access_as_user`],
+  scopes: ["openid", "profile", "email"],
 };
 
 export const API_BASE_URL =

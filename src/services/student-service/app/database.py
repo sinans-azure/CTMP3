@@ -12,12 +12,38 @@ if DATABASE_URL.startswith("sqlite"):
         db_path = "sqlite:///../shared_ctmp.db"
     engine = create_engine(db_path, connect_args={"check_same_thread": False})
 else:
-    if "sslmode" not in DATABASE_URL:
-        if "?" in DATABASE_URL:
-            DATABASE_URL += "&sslmode=require"
-        else:
-            DATABASE_URL += "?sslmode=require"
-    engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+    if os.environ.get("USE_ENTRA_DB_AUTH", "").lower() == "true":
+        from azure.identity import DefaultAzureCredential
+        from urllib.parse import urlparse
+        import psycopg2
+        
+        parsed = urlparse(DATABASE_URL)
+        db_host = parsed.hostname
+        db_name = parsed.path.lstrip("/")
+        db_port = parsed.port or 5432
+        db_user = os.environ.get("DB_USER") or parsed.username or "ctmp3-workload-identity"
+        
+        credential = DefaultAzureCredential()
+        
+        def get_conn():
+            token_obj = credential.get_token("https://ossrdbms-aad.database.windows.net/.default")
+            return psycopg2.connect(
+                host=db_host,
+                port=db_port,
+                database=db_name,
+                user=db_user,
+                password=token_obj.token,
+                sslmode="require"
+            )
+        
+        engine = create_engine("postgresql+psycopg2://", creator=get_conn, pool_pre_ping=True)
+    else:
+        if "sslmode" not in DATABASE_URL:
+            if "?" in DATABASE_URL:
+                DATABASE_URL += "&sslmode=require"
+            else:
+                DATABASE_URL += "?sslmode=require"
+        engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()

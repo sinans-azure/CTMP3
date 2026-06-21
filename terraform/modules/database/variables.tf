@@ -55,3 +55,18 @@ variable "sku_name" {
   type        = string
   default     = "B_Standard_B1ms"
 }
+
+variable "tenant_id" {
+  description = "Microsoft Entra ID Tenant ID."
+  type        = string
+}
+
+variable "workload_identity_principal_id" {
+  description = "Principal ID of the workload managed identity."
+  type        = string
+}
+
+variable "workload_identity_name" {
+  description = "Name of the workload managed identity."
+  type        = string
+}

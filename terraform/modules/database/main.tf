@@ -45,6 +45,12 @@ resource "azurerm_postgresql_flexible_server" "main" {
   geo_redundant_backup_enabled = false
   auto_grow_enabled            = true
 
+  authentication {
+    active_directory_auth_enabled = true
+    password_auth_enabled         = true
+    tenant_id                     = var.tenant_id
+  }
+
   tags = var.tags
 
   lifecycle {
@@ -56,6 +62,15 @@ resource "azurerm_postgresql_flexible_server" "main" {
   depends_on = [
     azurerm_private_dns_zone_virtual_network_link.pg
   ]
+}
+
+resource "azurerm_postgresql_flexible_server_active_directory_administrator" "aad_admin" {
+  server_name         = azurerm_postgresql_flexible_server.main.name
+  resource_group_name = var.resource_group_name
+  tenant_id           = var.tenant_id
+  object_id           = var.workload_identity_principal_id
+  principal_name      = var.workload_identity_name
+  principal_type      = "ServicePrincipal"
 }
 
 resource "azurerm_postgresql_flexible_server_database" "main" {

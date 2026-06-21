@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Terminal, Shield, ArrowRight, ShieldCheck, Cpu, AlertCircle } from "lucide-react"
 
 function LoginContent() {
-  const { instance } = useMsal()
+  const { instance, accounts } = useMsal()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [username, setUsername] = React.useState("")
@@ -20,6 +20,14 @@ function LoginContent() {
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState("")
   const [tokenLoading, setTokenLoading] = React.useState(false)
+  const [showCredentials, setShowCredentials] = React.useState(false)
+
+  // Redirect to dashboard if already authenticated with MSAL
+  React.useEffect(() => {
+    if (accounts.length > 0) {
+      router.push("/dashboard")
+    }
+  }, [accounts, router])
 
   // Handle invitation token (auto-login link)
   React.useEffect(() => {
@@ -121,77 +129,81 @@ function LoginContent() {
           <CardHeader className="space-y-1">
             <CardTitle className="text-xl font-bold">Portal Access</CardTitle>
             <CardDescription className="text-xs text-zinc-400">
-              Sign in with local credentials or corporate Single Sign-On.
+              Sign in with your corporate account or local credentials.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleCredentialsLogin} className="space-y-4">
-              {error && (
-                <div className="flex items-center gap-2 p-3 text-xs rounded-lg border border-red-500/30 bg-red-500/10 text-red-400">
-                  <AlertCircle className="h-4 w-4 shrink-0" />
-                  <span>{error}</span>
-                </div>
-              )}
-              <div className="space-y-1.5">
-                <Label htmlFor="username" className="text-zinc-400 text-xs">Username / UPN</Label>
-                <Input
-                  id="username"
-                  type="text"
-                  placeholder="e.g. trainer1 or student1"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  required
-                  className="bg-zinc-900 border-zinc-800 text-zinc-50"
-                />
+          <CardContent className="space-y-6">
+            {error && (
+              <div className="flex items-center gap-2 p-3 text-xs rounded-lg border border-red-500/30 bg-red-500/10 text-red-400">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{error}</span>
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="password" className="text-zinc-400 text-xs">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="bg-zinc-900 border-zinc-800 text-zinc-50"
-                />
-              </div>
-
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-zinc-50 hover:bg-zinc-200 text-zinc-950 font-bold h-10 shadow-lg shadow-zinc-500/10 mt-2"
-              >
-                {loading ? (
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-950 border-t-transparent" />
-                ) : (
-                  "Log In with Credentials"
-                )}
-              </Button>
-            </form>
-
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-zinc-900" />
-              </div>
-              <div className="relative flex justify-center text-[10px] uppercase">
-                <span className="bg-zinc-950 px-2 text-zinc-500">Or continue with</span>
-              </div>
-            </div>
+            )}
 
             <Button
               onClick={handleSsoLogin}
               disabled={loading}
-              className="w-full bg-indigo-600 text-white font-semibold hover:bg-indigo-500 h-10 shadow-lg shadow-indigo-600/20 active:scale-[0.98] transition-transform duration-100 flex items-center justify-center gap-2"
+              className="w-full bg-indigo-600 text-white font-semibold hover:bg-indigo-500 h-11 shadow-lg shadow-indigo-600/20 active:scale-[0.98] transition-transform duration-100 flex items-center justify-center gap-2"
             >
-              Sign In with SSO
+              Sign in with Microsoft
               <ArrowRight className="h-4 w-4" />
             </Button>
+
+            <div className="relative flex justify-center text-xs">
+              <button
+                type="button"
+                onClick={() => setShowCredentials(!showCredentials)}
+                className="text-zinc-500 hover:text-zinc-300 underline underline-offset-4"
+              >
+                {showCredentials ? "Hide local credentials login" : "Sign in with Username/Password"}
+              </button>
+            </div>
+
+            {showCredentials && (
+              <form onSubmit={handleCredentialsLogin} className="space-y-4 border-t border-zinc-900 pt-6 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="space-y-1.5">
+                  <Label htmlFor="username" className="text-zinc-400 text-xs">Username / UPN</Label>
+                  <Input
+                    id="username"
+                    type="text"
+                    placeholder="e.g. trainer1 or student1"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    required
+                    className="bg-zinc-900 border-zinc-800 text-zinc-50"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="password" className="text-zinc-400 text-xs">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="bg-zinc-900 border-zinc-800 text-zinc-50"
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-zinc-50 hover:bg-zinc-200 text-zinc-950 font-bold h-10 shadow-lg shadow-zinc-500/10 mt-2"
+                >
+                  {loading ? (
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-950 border-t-transparent" />
+                  ) : (
+                    "Log In with Credentials"
+                  )}
+                </Button>
+              </form>
+            )}
           </CardContent>
           <CardFooter className="justify-center border-t border-zinc-900 py-3.5">
             <div className="flex items-center gap-1.5 text-xs text-zinc-500">
               <Shield className="h-3.5 w-3.5" />
-              SSO logs are secure & audited
+              Microsoft Entra ID logs are secure & audited
             </div>
           </CardFooter>
         </Card>

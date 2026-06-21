@@ -42,10 +42,10 @@ export function useApiClient(): ApiClient {
         ...apiScopes,
         account: accounts[0],
       });
-      return response.accessToken;
+      return response.idToken;
     } catch {
       const response = await instance.acquireTokenPopup(apiScopes);
-      return response.accessToken;
+      return response.idToken;
     }
   }, [instance, accounts]);
 

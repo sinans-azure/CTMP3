@@ -30,10 +30,12 @@ class Settings(BaseSettings):
         return f"https://login.microsoftonline.com/{self.AZURE_TENANT_ID}/v2.0"
 
     @property
-    def token_audience(self) -> str:
+    def token_audience(self) -> str | list[str]:
         if self.AUDIENCE:
             return self.AUDIENCE
-        return f"api://{self.AZURE_CLIENT_ID}"
+        if not self.AZURE_CLIENT_ID:
+            return ""
+        return [self.AZURE_CLIENT_ID, f"api://{self.AZURE_CLIENT_ID}"]
 
     @property
     def cors_origin_list(self) -> list[str]:
