@@ -149,4 +149,11 @@ output "database_name" {
   value       = module.database.database_name
 }
 
+# -----------------------------------------------------------------------------
+# Workload Identity
+# -----------------------------------------------------------------------------
 
+output "workload_identity_client_id" {
+  description = "Client ID of the AKS Workload User-Assigned Managed Identity."
+  value       = azurerm_user_assigned_identity.workload.client_id
+}

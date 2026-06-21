@@ -84,27 +84,3 @@ data:
         # For Service Principal auth, use: credentials: pullsecret:argocd/acr-credentials
         default: true
   log.level: info
-
----
-# ============================================================================
-# Namespace for the Training Portal workloads
-# ============================================================================
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: training-portal
-  labels:
-    app.kubernetes.io/part-of: training-portal
-    istio-injection: disabled
-
----
-# ============================================================================
-# Service Account for Training Portal Workloads with Workload Identity
-# ============================================================================
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: ctmp-workload-sa
-  namespace: training-portal
-  annotations:
-    azure.workload.identity/client-id: "WORKLOAD_CLIENT_ID_PLACEHOLDER"
