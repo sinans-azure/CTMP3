@@ -31,10 +31,6 @@ terraform {
       source  = "Azure/azapi"
       version = "~> 2.0"
     }
-    kubernetes = {
-      source  = "hashicorp/kubernetes"
-      version = "~> 2.0"
-    }
   }
 
   backend "azurerm" {
@@ -61,13 +57,6 @@ provider "azurerm" {
     }
   }
   use_oidc = true # OIDC for CI/CD pipelines
-}
-
-provider "kubernetes" {
-  host                   = module.aks.kube_config_host
-  client_certificate     = base64decode(module.aks.client_certificate)
-  client_key             = base64decode(module.aks.client_key)
-  cluster_ca_certificate = base64decode(module.aks.cluster_ca_certificate)
 }
 
 provider "azapi" {}
@@ -305,24 +294,16 @@ resource "azurerm_role_assignment" "workload_kv_secrets_user" {
   principal_id         = azurerm_user_assigned_identity.workload.principal_id
 }
 
-resource "kubernetes_namespace" "training_portal" {
-  metadata {
-    name = "training-portal"
-    labels = {
-      "app.kubernetes.io/part-of" = "training-portal"
-      "istio-injection"           = "disabled"
-    }
-  }
+resource "azurerm_key_vault_secret" "workload_client_id" {
+  name         = "workload-client-id"
+  value        = azurerm_user_assigned_identity.workload.client_id
+  key_vault_id = module.key_vault.key_vault_id
 }
 
-resource "kubernetes_service_account" "workload" {
-  metadata {
-    name      = "ctmp-workload-sa"
-    namespace = kubernetes_namespace.training_portal.metadata[0].name
-    annotations = {
-      "azure.workload.identity/client-id" = azurerm_user_assigned_identity.workload.client_id
-    }
-  }
+resource "azurerm_role_assignment" "aks_kubelet_kv_secrets_user" {
+  scope                = module.key_vault.key_vault_id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = module.aks.aks_kubelet_identity_object_id
 }
 
 # =============================================================================
