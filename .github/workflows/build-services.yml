@@ -114,7 +114,6 @@ jobs:
           tags: |
             ${{ env.ACR_LOGIN_SERVER }}/${{ matrix.service }}:${{ github.sha }}
             ${{ env.ACR_LOGIN_SERVER }}/${{ matrix.service }}:0.0.${{ github.run_number }}
-            ${{ env.ACR_LOGIN_SERVER }}/${{ matrix.service }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |

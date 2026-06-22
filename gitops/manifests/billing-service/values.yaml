@@ -2,7 +2,7 @@ replicaCount: 1
 
 image:
   repository: ctmp3acr.azurecr.io/billing-service
-  tag: latest
+  tag: 0.0.0
   pullPolicy: IfNotPresent
 
 service:
