@@ -2,14 +2,12 @@ replicaCount: 1
 
 image:
   repository: ctmp3acr.azurecr.io/analytics-service
-  tag: 0.0.0
+  tag: 0.0.7
   pullPolicy: IfNotPresent
-
 service:
   type: ClusterIP
   port: 80
   targetPort: 8000
-
 ingress:
   enabled: true
   className: azure-application-gateway
@@ -30,7 +28,6 @@ resources:
   limits:
     cpu: 500m
     memory: 512Mi
-
 env:
   USE_ENTRA_DB_AUTH: "true"
   DB_USER: "ctmp3-workload-identity"
