@@ -357,5 +357,16 @@ resource "azurerm_dns_a_record" "api" {
   depends_on = [module.networking]
 }
 
+resource "azurerm_dns_a_record" "argocd" {
+  name                = "argocd"
+  zone_name           = var.domain_name
+  resource_group_name = azurerm_resource_group.main.name
+  ttl                 = 300
+  records             = [module.app_gateway.public_ip_address]
+
+  depends_on = [module.networking]
+}
+
+
 
 

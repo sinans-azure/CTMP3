@@ -262,6 +262,7 @@ resource "azurerm_kubernetes_cluster_extension" "argocd" {
   configuration_settings = {
     "azure.workloadIdentity.enabled" = "true"
     "redis-ha.enabled"               = "false"
+    "server.insecure"                = "true"
   }
 
   depends_on = [

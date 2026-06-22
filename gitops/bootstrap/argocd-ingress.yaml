@@ -4,11 +4,12 @@ metadata:
   name: argocd-server-ingress
   namespace: argocd
   annotations:
-    kubernetes.io/ingress.class: azure/application-gateway
     appgw.ingress.kubernetes.io/backend-path-prefix: /
     appgw.ingress.kubernetes.io/ssl-redirect: "true"
     appgw.ingress.kubernetes.io/appgw-ssl-certificate: "sneakertail-cert"
+    appgw.ingress.kubernetes.io/backend-protocol: "https"
 spec:
+  ingressClassName: azure-application-gateway
   tls:
     - hosts:
         - argocd.training.sneakertail.online
@@ -23,4 +24,4 @@ spec:
               service:
                 name: argocd-server
                 port:
-                  number: 443
+                  name: https
