@@ -138,3 +138,4 @@ variable "aks_private_dns_zone_id" {
   description = "Resource ID of the privatelink.centralindia.azmk8s.io DNS zone."
   type        = string
 }
+

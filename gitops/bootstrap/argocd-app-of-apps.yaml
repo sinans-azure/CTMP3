@@ -80,8 +80,7 @@ data:
         api_url: https://ctmp3acr.azurecr.io
         prefix: ctmp3acr.azurecr.io
         ping: yes
-        # Use AKS-managed ACR integration (az aks update --attach-acr)
-        # For Service Principal auth, use: credentials: pullsecret:argocd/acr-credentials
+        credentials: pullsecret:argocd/acr-credentials
         default: true
   log.level: info
 
