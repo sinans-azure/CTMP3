@@ -247,3 +247,25 @@ resource "azurerm_role_assignment" "agic_rg_reader" {
   role_definition_name = "Reader"
   principal_id         = azurerm_kubernetes_cluster.main.ingress_application_gateway[0].ingress_application_gateway_identity[0].object_id
 }
+
+# =============================================================================
+# ArgoCD AKS Extension
+# =============================================================================
+# Deploys the managed ArgoCD extension on the AKS cluster.
+# =============================================================================
+resource "azurerm_kubernetes_cluster_extension" "argocd" {
+  name           = "argocd"
+  cluster_id     = azurerm_kubernetes_cluster.main.id
+  extension_type = "Microsoft.ArgoCD"
+  release_train  = "Preview"
+
+  configuration_settings = {
+    "azure.workloadIdentity.enabled" = "true"
+    "redis-ha.enabled"               = "false"
+  }
+
+  depends_on = [
+    azurerm_kubernetes_cluster_node_pool.user
+  ]
+}
+

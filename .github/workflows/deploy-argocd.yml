@@ -27,22 +27,6 @@ jobs:
           echo "Connecting to private AKS cluster..."
           az aks get-credentials --resource-group rg-ctmp3 --name ctmp3-aks --overwrite-existing
 
-      - name: Install ArgoCD
-        run: |
-          if kubectl get deployment argocd-server -n argocd >/dev/null 2>&1; then
-            echo "ArgoCD already installed."
-            exit 0
-          fi
-
-          echo "Creating namespace 'argocd' if it does not exist..."
-          kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
-
-          echo "Applying community ArgoCD stable manifests..."
-          kubectl apply --server-side -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-
-          echo "Waiting for ArgoCD server components to reach ready state..."
-          kubectl rollout status deployment/argocd-server -n argocd --timeout=300s
-
       - name: Deploy App-of-Apps Bootstrap Manifest
         run: |
           echo "Applying ArgoCD App-of-Apps root bootstrap configuration..."
@@ -50,3 +34,4 @@ jobs:
 
           echo "Verifying root application creation..."
           kubectl get application -n argocd
+
