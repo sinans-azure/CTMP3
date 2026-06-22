@@ -1,15 +1,12 @@
 replicaCount: 1
-
 image:
   repository: ctmp3acr.azurecr.io/student-service
   tag: latest
   pullPolicy: IfNotPresent
-
 service:
   type: ClusterIP
   port: 80
   targetPort: 8000
-
 ingress:
   enabled: true
   className: azure-application-gateway
@@ -27,7 +24,6 @@ ingress:
     - secretName: sneakertail-cert
       hosts:
         - api.training.sneakertail.online
-
 resources:
   requests:
     cpu: 100m
@@ -35,16 +31,12 @@ resources:
   limits:
     cpu: 500m
     memory: 512Mi
-
 env:
   USE_ENTRA_DB_AUTH: "true"
   DB_USER: "ctmp3-workload-identity"
-
 keyvaultName: "ctmp3-kv"
 tenantId: "3e054dd4-88ff-476b-a5bc-14338ac07215"
-
 workloadIdentity:
-  clientId: "SET_BY_TERRAFORM_OUTPUT_WORKLOAD_IDENTITY_CLIENT_ID"
-
+  clientId: "eb005d93-6a81-4eef-8a50-e99cc0613b3d"
 configMapName: student-service-config
 secretName: student-service-secrets
