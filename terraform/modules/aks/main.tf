@@ -108,6 +108,11 @@ resource "azurerm_kubernetes_cluster" "main" {
   oidc_issuer_enabled       = true
   workload_identity_enabled = true
 
+  # --- Key Vault Secrets Provider: installs Secrets Store CSI driver & Azure Key Vault provider ---
+  key_vault_secrets_provider {
+    secret_rotation_enabled = true
+  }
+
   # --- Azure Monitor: container insights ---
   oms_agent {
     log_analytics_workspace_id = azurerm_log_analytics_workspace.aks.id
