@@ -65,9 +65,9 @@ Resources:
         Version: '2012-10-17'
         Statement:
           - Effect: Allow
-          back_populates:
-            Federated: !Ref AzureOIDCProvider
-          Action: sts:AssumeRoleWithWebIdentity
+            Principal:
+              Federated: !Ref AzureOIDCProvider
+            Action: sts:AssumeRoleWithWebIdentity
           Condition:
             StringEquals:
               sts.windows.net/{tenant_id}/:aud: !Ref AzureClientID
