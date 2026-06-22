@@ -1,0 +1,5 @@
+serviceAccount:
+  name: ctmp-workload-sa
+
+workloadIdentity:
+  clientId: "SET_BY_TERRAFORM_OUTPUT_WORKLOAD_IDENTITY_CLIENT_ID"

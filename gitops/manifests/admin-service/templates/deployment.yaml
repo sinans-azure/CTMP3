@@ -34,10 +34,7 @@ spec:
             - name: DB_USER
               value: "{{ .Values.env.DB_USER }}"
             - name: AZURE_CLIENT_ID
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.secretName }}
-                  key: AZURE_CLIENT_ID
+              value: "{{ .Values.workloadIdentity.clientId }}"
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:

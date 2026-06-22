@@ -30,8 +30,8 @@ ingress:
 
 resources:
   requests:
-    cpu: 250m
-    memory: 256Mi
+    cpu: 100m
+    memory: 128Mi
   limits:
     cpu: 500m
     memory: 512Mi
@@ -42,6 +42,9 @@ env:
 
 keyvaultName: "ctmp3-kv"
 tenantId: "3e054dd4-88ff-476b-a5bc-14338ac07215"
+
+workloadIdentity:
+  clientId: "SET_BY_TERRAFORM_OUTPUT_WORKLOAD_IDENTITY_CLIENT_ID"
 
 configMapName: admin-service-config
 secretName: admin-service-secrets

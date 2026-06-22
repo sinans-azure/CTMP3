@@ -95,13 +95,3 @@ metadata:
   labels:
     app.kubernetes.io/part-of: training-portal
     istio-injection: disabled
-
----
-# ============================================================================
-# Service Account for Training Portal Workloads
-# ============================================================================
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: ctmp-workload-sa
-  namespace: training-portal

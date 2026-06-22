@@ -1,0 +1,36 @@
+# ============================================================================
+# ArgoCD Application: Workload Identity Shared Kubernetes Resources
+# ============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: workload-identity
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: training-portal
+    app.kubernetes.io/component: identity
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/sinans-azure/CTMP3.git
+    targetRevision: HEAD
+    path: gitops/manifests/workload-identity/
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: training-portal
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

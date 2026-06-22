@@ -294,18 +294,6 @@ resource "azurerm_role_assignment" "workload_kv_secrets_user" {
   principal_id         = azurerm_user_assigned_identity.workload.principal_id
 }
 
-resource "azurerm_key_vault_secret" "workload_client_id" {
-  name         = "workload-client-id"
-  value        = azurerm_user_assigned_identity.workload.client_id
-  key_vault_id = module.key_vault.key_vault_id
-}
-
-resource "azurerm_role_assignment" "aks_kubelet_kv_secrets_user" {
-  scope                = module.key_vault.key_vault_id
-  role_definition_name = "Key Vault Secrets User"
-  principal_id         = module.aks.aks_kubelet_identity_object_id
-}
-
 # =============================================================================
 # Module: Database
 # =============================================================================
@@ -366,7 +354,6 @@ resource "azurerm_dns_a_record" "argocd" {
 
   depends_on = [module.networking]
 }
-
 
 
 

@@ -35,7 +35,7 @@
 - [x] Update `modules/database/main.tf` to enable `active_directory_auth_enabled = true` and create the active directory administrator resource
 
 ## 5. Kubernetes manifests (Workload Identity)
-- [x] Create `gitops/manifests/service-account.yaml` ServiceAccount definition with workload client ID annotation
+- [x] Create Helm-managed workload identity ServiceAccount definition with workload client ID annotation
 - [x] Update deployment manifests of all services to use `serviceAccountName: ctmp-workload-sa`, `azure.workload.identity/use: "true"` label, and set environment variables `USE_ENTRA_DB_AUTH` and `DB_USER`
 
 ## 6. Backend PostgreSQL Active Directory Code
