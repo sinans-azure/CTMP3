@@ -35,11 +35,6 @@ spec:
               value: "{{ .Values.env.DB_USER }}"
             - name: AZURE_CLIENT_ID
               value: "{{ .Values.workloadIdentity.clientId }}"
-            - name: DATABASE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.secretName }}
-                  key: PG_CONNECTION_STRING
           envFrom:
             - configMapRef:
                 name: {{ .Values.configMapName }}

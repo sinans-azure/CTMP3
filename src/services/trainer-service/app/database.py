@@ -4,10 +4,23 @@ from datetime import datetime
 from sqlalchemy import create_engine, Column, String, Integer, DateTime, ForeignKey, Table, Float
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 
-DATABASE_URL = os.environ.get("DATABASE_URL") or os.environ.get("PG_CONNECTION_STRING")
+def _read_secret_file(path: str) -> str | None:
+    try:
+        with open(path, "r", encoding="utf-8") as secret_file:
+            value = secret_file.read().strip()
+            return value or None
+    except FileNotFoundError:
+        return None
+
+
+DATABASE_URL = (
+    os.environ.get("DATABASE_URL")
+    or os.environ.get("PG_CONNECTION_STRING")
+    or _read_secret_file("/mnt/secrets/pg-connection-string")
+)
 
 if not DATABASE_URL:
-    raise ValueError("DATABASE_URL or PG_CONNECTION_STRING environment variable is required")
+    raise ValueError("DATABASE_URL, PG_CONNECTION_STRING, or /mnt/secrets/pg-connection-string is required")
 
 if os.environ.get("USE_ENTRA_DB_AUTH", "").lower() == "true":
     from azure.identity import DefaultAzureCredential
