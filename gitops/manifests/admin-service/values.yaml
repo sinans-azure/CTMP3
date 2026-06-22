@@ -20,6 +20,10 @@ ingress:
       paths:
         - path: /api/admin
           pathType: Prefix
+  tls:
+    - secretName: sneakertail-cert
+      hosts:
+        - api.training.sneakertail.online
 resources:
   requests:
     cpu: 100m
