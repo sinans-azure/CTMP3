@@ -13,6 +13,8 @@ from app.models import (
     AwsTemplateResponse,
     TrainingGroup,
     AssignStudentsRequest,
+    CreateGroupAndStudentsRequest,
+    CreateGroupAndStudentsResponse,
     EC2Instance,
 )
 
@@ -300,4 +302,3 @@ async def list_group_instances(
         return result
     finally:
         db.close()
-
