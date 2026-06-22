@@ -10,7 +10,6 @@
 # PREREQUISITES:
 #   1. ArgoCD installed in the 'argocd' namespace on the private AKS cluster
 #   2. Git repository credentials configured in ArgoCD (for private repos)
-#   3. ACR credentials configured for ArgoCD Image Updater
 #
 # HOW IT WORKS:
 #   ArgoCD reads all YAML files in gitops/apps/ and creates child Application
@@ -59,32 +58,6 @@ spec:
         factor: 2
         maxDuration: 3m
 
----
-# ============================================================================
-# ArgoCD Image Updater Configuration
-# ============================================================================
-# Configures ArgoCD Image Updater to watch the Azure Container Registry (ACR)
-# for new image tags and automatically update the K8s manifests.
-# ============================================================================
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: argocd-image-updater-config
-  namespace: argocd
-  labels:
-    app.kubernetes.io/part-of: argocd-image-updater
-data:
-  registries.conf: |
-    registries:
-      - name: Azure Container Registry
-        api_url: https://ctmp3acr.azurecr.io
-        prefix: ctmp3acr.azurecr.io
-        ping: yes
-        credentials: pullsecret:argocd/acr-credentials
-        default: true
-  log.level: info
-
----
 # ============================================================================
 # Namespace for the Training Portal workloads
 # ============================================================================

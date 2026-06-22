@@ -11,13 +11,6 @@ metadata:
     app.kubernetes.io/component: api
   annotations:
     argocd.argoproj.io/sync-wave: "1"
-    argocd-image-updater.argoproj.io/image-list: admin=ctmp3acr.azurecr.io/admin-service
-    argocd-image-updater.argoproj.io/admin.update-strategy: semver
-    argocd-image-updater.argoproj.io/admin.allow-tags: regexp:^0\.0\.[0-9]+$
-    argocd-image-updater.argoproj.io/admin.helm.image-name: image.repository
-    argocd-image-updater.argoproj.io/admin.helm.image-tag: image.tag
-    argocd-image-updater.argoproj.io/admin.force-update: "true"
-    argocd-image-updater.argoproj.io/write-back-method: git
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:

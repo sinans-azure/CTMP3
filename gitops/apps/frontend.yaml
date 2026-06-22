@@ -11,14 +11,6 @@ metadata:
     app.kubernetes.io/component: frontend
   annotations:
     argocd.argoproj.io/sync-wave: "2"
-    # ArgoCD Image Updater — auto-detect new images from ACR
-    argocd-image-updater.argoproj.io/image-list: frontend=ctmp3acr.azurecr.io/frontend
-    argocd-image-updater.argoproj.io/frontend.update-strategy: semver
-    argocd-image-updater.argoproj.io/frontend.allow-tags: regexp:^0\.0\.[0-9]+$
-    argocd-image-updater.argoproj.io/frontend.helm.image-name: image.repository
-    argocd-image-updater.argoproj.io/frontend.helm.image-tag: image.tag
-    argocd-image-updater.argoproj.io/frontend.force-update: "true"
-    argocd-image-updater.argoproj.io/write-back-method: git
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:

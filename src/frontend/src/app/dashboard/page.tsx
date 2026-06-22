@@ -1,31 +1,35 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { useAuth } from "@/hooks/use-auth"
-import { StatsCards } from "@/components/dashboard/stats-cards"
-import { InstanceChart } from "@/components/dashboard/instance-chart"
-import { CostChart } from "@/components/dashboard/cost-chart"
-import { ActivityFeed } from "@/components/dashboard/activity-feed"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Sparkles, Terminal } from "lucide-react"
+import * as React from "react";
+import { useAuth } from "@/hooks/use-auth";
+import { StatsCards } from "@/components/dashboard/stats-cards";
+import { InstanceChart } from "@/components/dashboard/instance-chart";
+import { CostChart } from "@/components/dashboard/cost-chart";
+import { ActivityFeed } from "@/components/dashboard/activity-feed";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Sparkles, Terminal } from "lucide-react";
 
 export default function DashboardPage() {
-  const { name, isAdmin, isTrainer, isStudent } = useAuth()
+  const { name, isAdmin, isTrainer, isStudent } = useAuth();
 
   const roleLabel = React.useMemo(() => {
-    if (isAdmin) return "System Administrator"
-    if (isTrainer) return "Training Instructor"
-    return "Student Member"
-  }, [isAdmin, isTrainer])
+    if (isAdmin) return "System Administrator";
+    if (isTrainer) return "Training Instructor";
+    return "Student Member";
+  }, [isAdmin, isTrainer]);
 
   return (
     <div className="space-y-6">
       {/* Welcome Banner */}
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-zinc-50">Welcome back, {name || "User"}</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight text-zinc-50">
+            Welcome back, {name || "User"}
+          </h1>
           <p className="text-sm text-zinc-400">
-            Signed in as <span className="font-semibold text-indigo-400">{roleLabel}</span>. Access all resources below.
+            Signed in as{" "}
+            <span className="font-semibold text-indigo-400">{roleLabel}</span>.
+            Access all resources below.
           </p>
         </div>
       </div>
@@ -47,5 +51,5 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

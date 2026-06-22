@@ -122,25 +122,49 @@ jobs:
             NEXT_PUBLIC_REDIRECT_URI=https://training.sneakertail.online
             NEXT_PUBLIC_API_URL=https://api.training.sneakertail.online
 
+  update-gitops:
+    name: "Update GitOps Image Tags"
+    needs: [detect-changes, build-services]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Install yq
-        if: matrix.changed == 'true'
         run: |
           sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64
           sudo chmod +x /usr/local/bin/yq
 
-      - name: Update GitOps image tag
-        if: matrix.changed == 'true'
+      - name: Update changed service tags
         run: |
           IMAGE_TAG="0.0.${{ github.run_number }}"
-          yq -i '.image.tag = strenv(IMAGE_TAG)' "gitops/manifests/${{ matrix.service }}/values.yaml"
+          export IMAGE_TAG
 
+          update_tag() {
+            service="$1"
+            changed="$2"
+            if [ "$changed" = "true" ]; then
+              yq -i '.image.tag = strenv(IMAGE_TAG)' "gitops/manifests/${service}/values.yaml"
+            fi
+          }
+
+          update_tag "auth-service" "${{ needs.detect-changes.outputs.auth-service }}"
+          update_tag "admin-service" "${{ needs.detect-changes.outputs.admin-service }}"
+          update_tag "trainer-service" "${{ needs.detect-changes.outputs.trainer-service }}"
+          update_tag "student-service" "${{ needs.detect-changes.outputs.student-service }}"
+          update_tag "billing-service" "${{ needs.detect-changes.outputs.billing-service }}"
+          update_tag "analytics-service" "${{ needs.detect-changes.outputs.analytics-service }}"
+          update_tag "frontend" "${{ needs.detect-changes.outputs.frontend }}"
+
+      - name: Commit GitOps image tags
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "gitops/manifests/${{ matrix.service }}/values.yaml"
+          git add gitops/manifests/*/values.yaml
           if git diff --cached --quiet; then
-            echo "${{ matrix.service }} image tag is already current."
+            echo "No GitOps image tag changes to commit."
           else
-            git commit -m "Update ${{ matrix.service }} image tag to ${IMAGE_TAG}"
-            git pull --rebase
+            git commit -m "Update image tags to 0.0.${{ github.run_number }}"
             git push
           fi
