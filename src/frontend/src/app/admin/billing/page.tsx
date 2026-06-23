@@ -8,21 +8,54 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { DollarSign, ShieldAlert, CreditCard, PiggyBank, Receipt, Sparkles } from "lucide-react"
+import { DollarSign, ShieldAlert, CreditCard, PiggyBank, Receipt, Sparkles, RefreshCw } from "lucide-react"
 
 export default function AdminBillingPage() {
   const api = useApiClient()
   const [budget, setBudget] = React.useState({
-    limit: 2500,
-    spent: 1240.50,
+    limit: 500,
+    spent: 0,
     alertThreshold: 80,
   })
-  const [invoices, setInvoices] = React.useState([
-    { id: "INV-001", date: "2026-05-31", amount: 980.25, status: "Paid" },
-    { id: "INV-002", date: "2026-04-30", amount: 760.40, status: "Paid" },
-    { id: "INV-003", date: "2026-03-31", amount: 1120.10, status: "Paid" },
-  ])
+  const [invoices, setInvoices] = React.useState<any[]>([])
+  const [loading, setLoading] = React.useState(false)
   const [updating, setUpdating] = React.useState(false)
+
+  const fetchBillingData = async () => {
+    setLoading(true)
+    try {
+      const summary = await api.get<any>("/api/billing/summary")
+      if (summary) {
+        setBudget((prev) => ({
+          ...prev,
+          limit: summary.monthly_budget || 500,
+          spent: summary.total_platform_cost || 0,
+        }))
+      }
+      
+      const costs = await api.get<any>("/api/billing/costs")
+      if (costs && costs.details && Array.isArray(costs.details)) {
+        const mapped = costs.details.map((detail: any, index: number) => ({
+          id: `CS-${1000 + index}`,
+          date: new Date(detail.date).toLocaleDateString(),
+          amount: detail.amount,
+          status: "Accrued"
+        }))
+        setInvoices(mapped)
+      } else {
+        setInvoices([])
+      }
+    } catch (err) {
+      console.warn("Could not load billing data from API.", err)
+      setInvoices([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  React.useEffect(() => {
+    fetchBillingData()
+  }, [])
 
   const handleUpdateBudget = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -122,18 +155,38 @@ export default function AdminBillingPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {invoices.map((inv) => (
-                  <TableRow key={inv.id} className="border-b border-zinc-900 hover:bg-zinc-900/20">
-                    <TableCell className="font-semibold text-zinc-300">{inv.id}</TableCell>
-                    <TableCell className="text-zinc-400 text-xs">{inv.date}</TableCell>
-                    <TableCell className="text-zinc-300 font-mono text-xs font-semibold">${inv.amount.toFixed(2)}</TableCell>
-                    <TableCell>
-                      <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                        {inv.status}
-                      </Badge>
+                {loading && invoices.length === 0 ? (
+                  <TableRow className="border-b border-zinc-900">
+                    <TableCell colSpan={4} className="h-32 text-center">
+                      <RefreshCw className="h-6 w-6 animate-spin text-zinc-500 mx-auto" />
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : invoices.length === 0 ? (
+                  <TableRow className="border-b border-zinc-900">
+                    <TableCell colSpan={4} className="h-40 text-center text-zinc-500">
+                      <div className="flex flex-col items-center justify-center gap-2 py-4">
+                        <Receipt className="h-8 w-8 text-zinc-600 animate-pulse" />
+                        <span className="font-semibold text-sm text-zinc-300">No invoices generated</span>
+                        <span className="text-xs text-zinc-500 max-w-xs">
+                          All cloud sandbox consumption billing is tracked here. Standard AWS charges will generate accrued line items.
+                        </span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  invoices.map((inv) => (
+                    <TableRow key={inv.id} className="border-b border-zinc-900 hover:bg-zinc-900/20">
+                      <TableCell className="font-semibold text-zinc-300">{inv.id}</TableCell>
+                      <TableCell className="text-zinc-400 text-xs">{inv.date}</TableCell>
+                      <TableCell className="text-zinc-300 font-mono text-xs font-semibold">${inv.amount.toFixed(2)}</TableCell>
+                      <TableCell>
+                        <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                          {inv.status}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>

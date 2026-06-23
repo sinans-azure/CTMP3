@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { useMsal } from "@azure/msal-react";
 import { apiScopes, API_BASE_URL } from "@/lib/msal-config";
 
@@ -128,5 +128,8 @@ export function useApiClient(): ApiClient {
     [request]
   );
 
-  return { request, get, post, put, patch, del, getDownload };
+  return useMemo(
+    () => ({ request, get, post, put, patch, del, getDownload }),
+    [request, get, post, put, patch, del, getDownload]
+  );
 }

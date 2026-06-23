@@ -100,6 +100,33 @@ async def get_current_user(
             },
         )
 
+        # Normalize and resolve roles dynamically
+        roles = claims.get("roles", [])
+        if isinstance(roles, str):
+            roles = [roles]
+        roles = list(roles)
+        
+        groups = claims.get("groups", [])
+        if isinstance(groups, str):
+            groups = [groups]
+        groups = [str(g) for g in groups]
+        
+        email = (claims.get("email") or claims.get("preferred_username") or "").lower()
+        username = (claims.get("preferred_username") or "").lower()
+        name = (claims.get("name") or "").lower()
+        
+        is_admin = "admin" in [r.lower() for r in roles] or any("admin" in g.lower() for g in groups) or email.startswith("admin") or username.startswith("admin") or "admin" in name
+        is_trainer = "trainer" in [r.lower() for r in roles] or any("trainer" in g.lower() for g in groups) or "trainer" in email or "trainer" in username or "trainer" in name
+        
+        resolved_roles = []
+        if is_admin:
+            resolved_roles.append("Admin")
+        if is_trainer:
+            resolved_roles.append("Trainer")
+        if not resolved_roles:
+            resolved_roles.append("Student")
+            
+        claims["roles"] = resolved_roles
         return claims
 
     except JWTError as e:

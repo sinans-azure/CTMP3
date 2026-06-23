@@ -80,3 +80,18 @@ class CreateGroupAndStudentsResponse(BaseModel):
     student_count: int = Field(..., description="Total student count in group")
     created_students: list[GeneratedStudentCredentials] = Field(default_factory=list, description="Credentials for generated students")
 
+
+class StudentInstanceResponse(BaseModel):
+    """Details of a student instance including group and student info."""
+
+    id: str = Field(..., description="EC2 Instance ID")
+    name: str = Field(..., description="Instance name/tag")
+    state: str = Field(..., description="State of the instance")
+    instance_type: str = Field(..., description="Instance type")
+    launch_time: datetime = Field(..., description="Launch time")
+    group_id: str = Field(..., description="Group ID")
+    group_name: str = Field(..., description="Group name")
+    student_id: str | None = Field(None, description="Student ID")
+    student_name: str | None = Field(None, description="Student display name")
+    student_email: str | None = Field(None, description="Student email")
+

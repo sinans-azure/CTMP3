@@ -26,16 +26,91 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 async def get_current_user_profile(
     claims: Annotated[dict, Depends(get_current_user)],
 ) -> UserProfile:
-    """Return the current user's profile extracted from JWT claims."""
+    """Return the current user's profile extracted from JWT claims and sync to DB."""
+    from app.database import SessionLocal, User as DbUser
+    
+    oid = claims.get("oid") or claims.get("sub", "")
+    email = claims.get("email", claims.get("preferred_username", ""))
+    username = claims.get("preferred_username", email or oid)
+    name = claims.get("name", username)
+    
+    # Extract roles and groups from claims
+    roles = claims.get("roles", [])
+    if isinstance(roles, str):
+        roles = [roles]
+    roles = list(roles)
+    
+    groups = claims.get("groups", [])
+    if isinstance(groups, str):
+        groups = [groups]
+    groups = [str(g) for g in groups]
+        
+    # Determine resolved role
+    roles_lower = [r.lower() for r in roles]
+    groups_lower = [str(g).lower() for g in groups]
+    username_lower = username.lower()
+    email_lower = email.lower()
+    name_lower = name.lower()
+    
+    determined_role = "Student"
+    if "admin" in roles_lower or any("admin" in g for g in groups_lower) or username_lower.startswith("admin") or email_lower.startswith("admin") or "admin" in name_lower:
+        determined_role = "Admin"
+    elif "trainer" in roles_lower or any("trainer" in g for g in groups_lower) or "trainer" in username_lower or "trainer" in email_lower or "trainer" in name_lower:
+        determined_role = "Trainer"
+        
+    # Normalize roles list in claims/response
+    if determined_role not in roles:
+        roles.append(determined_role)
+        
+    # Sync to DB if not mock
+    sub_val = claims.get("sub", "")
+    if sub_val and not sub_val.startswith("mock-"):
+        db = SessionLocal()
+        try:
+            # Check by oid or email
+            user = db.query(DbUser).filter((DbUser.id == oid) | (DbUser.email == email)).first()
+            if not user:
+                user = DbUser(
+                    id=oid,
+                    username=username,
+                    email=email,
+                    hashed_password=DbUser.hash_password("SSO-No-Password-Set-Placeholder-123!"),
+                    name=name,
+                    role=determined_role
+                )
+                db.add(user)
+                logger.info(f"SSO: Synced new user {username} with role {determined_role} to DB")
+            else:
+                # Update details if changed
+                changed = False
+                if user.role != determined_role:
+                    user.role = determined_role
+                    changed = True
+                if user.name != name:
+                    user.name = name
+                    changed = True
+                if user.email != email:
+                    user.email = email
+                    changed = True
+                if changed:
+                    db.add(user)
+                    logger.info(f"SSO: Updated user {username} details (role: {determined_role}) in DB")
+            db.commit()
+        except Exception as e:
+            logger.error(f"Error syncing user to database: {e}")
+            db.rollback()
+        finally:
+            db.close()
+            
     return UserProfile(
-        sub=claims.get("sub", ""),
-        name=claims.get("name", ""),
-        email=claims.get("email", claims.get("preferred_username", "")),
-        preferred_username=claims.get("preferred_username", ""),
-        roles=claims.get("roles", []),
-        groups=claims.get("groups", []),
+        sub=oid,
+        name=name,
+        email=email,
+        preferred_username=username,
+        roles=roles,
+        groups=groups,
         tenant_id=claims.get("tid", ""),
-        oid=claims.get("oid", ""),
+        oid=oid,
     )
 
 

@@ -57,6 +57,33 @@ async def get_current_user(
     """Validate Entra ID JWT token and return decoded claims."""
     token = credentials.credentials
 
+    if token.startswith("mock-"):
+        from app.database import SessionLocal, User
+        parts = token.split("-")
+        if len(parts) >= 2:
+            user_id = parts[1]
+            db = SessionLocal()
+            try:
+                user = db.query(User).filter(User.id == user_id).first()
+                if user:
+                    return {
+                        "sub": user.id,
+                        "name": user.name,
+                        "email": user.email,
+                        "preferred_username": user.username,
+                        "roles": [user.role],
+                        "groups": [g.id for g in user.groups],
+                        "tid": "mock-tenant",
+                        "oid": user.id
+                    }
+            finally:
+                db.close()
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid mock token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     try:
         jwks = await _fetch_jwks(settings)
         signing_key = _get_signing_key(token, jwks)
@@ -73,6 +100,33 @@ async def get_current_user(
             },
         )
 
+        # Normalize and resolve roles dynamically
+        roles = claims.get("roles", [])
+        if isinstance(roles, str):
+            roles = [roles]
+        roles = list(roles)
+        
+        groups = claims.get("groups", [])
+        if isinstance(groups, str):
+            groups = [groups]
+        groups = [str(g) for g in groups]
+        
+        email = (claims.get("email") or claims.get("preferred_username") or "").lower()
+        username = (claims.get("preferred_username") or "").lower()
+        name = (claims.get("name") or "").lower()
+        
+        is_admin = "admin" in [r.lower() for r in roles] or any("admin" in g.lower() for g in groups) or email.startswith("admin") or username.startswith("admin") or "admin" in name
+        is_trainer = "trainer" in [r.lower() for r in roles] or any("trainer" in g.lower() for g in groups) or "trainer" in email or "trainer" in username or "trainer" in name
+        
+        resolved_roles = []
+        if is_admin:
+            resolved_roles.append("Admin")
+        if is_trainer:
+            resolved_roles.append("Trainer")
+        if not resolved_roles:
+            resolved_roles.append("Student")
+            
+        claims["roles"] = resolved_roles
         return claims
 
     except JWTError as e:

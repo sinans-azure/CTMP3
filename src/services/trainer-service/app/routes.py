@@ -16,6 +16,7 @@ from app.models import (
     CreateGroupAndStudentsRequest,
     CreateGroupAndStudentsResponse,
     EC2Instance,
+    StudentInstanceResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -91,6 +92,55 @@ Outputs:
     Value: !GetAtt AzureFederatedRole.Arn
 """
     return AwsTemplateResponse(template_yaml=cf_template)
+
+
+@router.get("/instances", response_model=list[StudentInstanceResponse])
+async def get_trainer_instances(
+    claims: Annotated[dict, Depends(require_trainer)],
+) -> list[StudentInstanceResponse]:
+    """Retrieve all instances for the trainer's groups or all if admin/no groups."""
+    from app.database import SessionLocal, EC2Instance as DbInstance, TrainingGroup as DbGroup, User as DbUser
+    db = SessionLocal()
+    try:
+        trainer_id = claims.get("sub", "")
+        # Get groups where this trainer is assigned
+        db_groups = db.query(DbGroup).filter(DbGroup.trainer_id == trainer_id).all()
+        group_ids = [g.id for g in db_groups]
+        
+        # If the user is Admin or has no groups, let them see all instances
+        roles = claims.get("roles", [])
+        if "Admin" in roles or not group_ids:
+            query = db.query(DbInstance)
+        else:
+            query = db.query(DbInstance).filter(DbInstance.group_id.in_(group_ids))
+            
+        db_instances = query.all()
+        
+        result = []
+        for inst in db_instances:
+            student_name = ""
+            student_email = ""
+            if inst.student:
+                student_name = inst.student.name or inst.student.username
+                student_email = inst.student.email or ""
+                
+            group_name = inst.group.name if inst.group else "Default Group"
+            
+            result.append(StudentInstanceResponse(
+                id=inst.id,
+                name=inst.name or "Unnamed Instance",
+                state=inst.state or "unknown",
+                instance_type=inst.instance_type or "t3.micro",
+                launch_time=inst.launch_time or datetime.utcnow(),
+                group_id=inst.group_id,
+                group_name=group_name,
+                student_id=inst.student_id,
+                student_name=student_name,
+                student_email=student_email
+            ))
+        return result
+    finally:
+        db.close()
 
 
 @router.get("/groups", response_model=list[TrainingGroup])

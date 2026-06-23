@@ -85,7 +85,7 @@ export function AppSidebar() {
       title: "AWS OIDC Setup",
       url: "/trainer/aws-setup",
       icon: Cloud,
-      roles: ["Admin", "Trainer"],
+      roles: ["Trainer"],
     })
     items.push({
       title: "EC2 Instances",

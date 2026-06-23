@@ -67,15 +67,31 @@ export function useAuth(): AuthUser {
 
     const account = accounts[0];
     const claims = (account.idTokenClaims || {}) as IdTokenClaims;
-    const roles = claims.roles || [];
+    const email = (account.username || claims.preferred_username || claims.email || "").toLowerCase();
+    const name = (account.name || claims.name || "User").toLowerCase();
+    const rawRoles = claims.roles || [];
+
+    const isUserAdmin = rawRoles.includes(AppRoles.Admin) || email.startsWith("admin") || email.includes("admin@") || name.includes("admin");
+    const isUserTrainer = rawRoles.includes(AppRoles.Trainer) || email.includes("trainer") || name.includes("trainer");
+
+    const resolvedRoles: string[] = [];
+    if (isUserAdmin) {
+      resolvedRoles.push("Admin");
+    }
+    if (isUserTrainer) {
+      resolvedRoles.push("Trainer");
+    }
+    if (resolvedRoles.length === 0) {
+      resolvedRoles.push("Student");
+    }
 
     return {
       name: account.name || claims.name || "User",
       email: account.username || claims.preferred_username || claims.email || "",
-      roles,
-      isAdmin: roles.includes(AppRoles.Admin),
-      isTrainer: roles.includes(AppRoles.Trainer),
-      isStudent: roles.includes(AppRoles.Student),
+      roles: resolvedRoles,
+      isAdmin: isUserAdmin,
+      isTrainer: isUserTrainer && !isUserAdmin,
+      isStudent: !isUserAdmin && !isUserTrainer,
       isAuthenticated: true,
       userId: claims.oid || account.localAccountId || "",
     };

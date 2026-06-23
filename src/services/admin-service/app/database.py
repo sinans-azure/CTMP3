@@ -132,97 +132,16 @@ def init_db():
     db = SessionLocal()
     try:
         if db.query(User).count() == 0:
-            # Seed Alice (Admin)
+            # Seed local emergency admin
             admin = User(
                 id="user-001",
                 username="admin1",
-                email="alice@contoso.com",
+                email="admin1@ctmp.local",
                 hashed_password=User.hash_password("Password123"),
-                name="Alice Johnson",
+                name="Emergency Admin",
                 role="Admin"
             )
-            # Seed Bob (Trainer)
-            trainer = User(
-                id="user-002",
-                username="trainer1",
-                email="bob@contoso.com",
-                hashed_password=User.hash_password("Password123"),
-                name="Bob Smith",
-                role="Trainer"
-            )
-            # Seed Carol (Student)
-            student1 = User(
-                id="user-003",
-                username="student1",
-                email="carol@contoso.com",
-                hashed_password=User.hash_password("Password123"),
-                name="Carol Williams",
-                role="Student"
-            )
-            # Seed Dave (Student)
-            student2 = User(
-                id="user-004",
-                username="student2",
-                email="dave@contoso.com",
-                hashed_password=User.hash_password("Password123"),
-                name="Dave Brown",
-                role="Student"
-            )
-            db.add_all([admin, trainer, student1, student2])
-            db.commit()
-            
-            # Seed some default groups
-            g1 = TrainingGroup(
-                id="group-101",
-                name="AWS Basics - Group A",
-                description="Introduction to AWS infrastructure.",
-                trainer_id="user-002",
-                aws_account_id="123456789012",
-                aws_region="us-east-1"
-            )
-            g2 = TrainingGroup(
-                id="group-102",
-                name="Advanced Cloud Architecture",
-                description="Complex architectures and OIDC federation.",
-                trainer_id="user-002",
-                aws_account_id="123456789012",
-                aws_region="us-west-2"
-            )
-            db.add_all([g1, g2])
-            db.commit()
-            
-            # Map students to groups
-            g1.students.append(student1)
-            g1.students.append(student2)
-            g2.students.append(student1)
-            db.commit()
-            
-            # Seed default EC2 instances
-            inst1 = EC2Instance(
-                id="i-0abcdef1234567890",
-                name="student-web-server",
-                state="running",
-                instance_type="t3.micro",
-                group_id="group-101",
-                student_id="user-003"
-            )
-            inst2 = EC2Instance(
-                id="i-0123456789abcdef0",
-                name="student-db-server",
-                state="stopped",
-                instance_type="t3.medium",
-                group_id="group-101",
-                student_id="user-004"
-            )
-            inst3 = EC2Instance(
-                id="i-0987654321fedcba0",
-                name="adv-k8s-node",
-                state="running",
-                instance_type="t3.large",
-                group_id="group-102",
-                student_id="user-003"
-            )
-            db.add_all([inst1, inst2, inst3])
+            db.add(admin)
             db.commit()
     except Exception as e:
         print(f"Error seeding DB: {e}")

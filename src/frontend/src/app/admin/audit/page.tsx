@@ -20,25 +20,43 @@ interface AuditLog {
 
 export default function AdminAuditPage() {
   const api = useApiClient()
-  const [logs, setLogs] = React.useState<AuditLog[]>([
-    { id: "101", timestamp: "2026-06-18T10:00:00Z", user: "admin@contoso.com", action: "DELETE_USER", resource: "user:bob.brown@contoso.com", status: "Success" },
-    { id: "102", timestamp: "2026-06-18T09:45:12Z", user: "trainer.jane@contoso.com", action: "DOWNLOAD_CF_TEMPLATE", resource: "template:aws-setup.json", status: "Success" },
-    { id: "103", timestamp: "2026-06-18T08:30:45Z", user: "student.john@contoso.com", action: "START_INSTANCE", resource: "instance:i-0a8b9c10d", status: "Success" },
-    { id: "104", timestamp: "2026-06-18T08:15:00Z", user: "system@contoso.com", action: "BUDGET_ALARM_80", resource: "billing:CTMP-June", status: "Warning" },
-    { id: "105", timestamp: "2026-06-18T07:22:11Z", user: "trainer.jane@contoso.com", action: "CREATE_GROUP", resource: "group:AWS-Cloud-Basics", status: "Success" },
-  ])
+  const [logs, setLogs] = React.useState<AuditLog[]>([])
   const [search, setSearch] = React.useState("")
   const [loading, setLoading] = React.useState(false)
 
   const fetchLogs = async () => {
     setLoading(true)
     try {
-      const data = await api.get<AuditLog[]>("/api/audit")
-      if (data && Array.isArray(data)) {
-        setLogs(data)
+      const data = await api.get<any>("/api/admin/audit-log")
+      if (data && data.entries && Array.isArray(data.entries)) {
+        // Map backend AuditLogResponse to frontend AuditLog interface
+        const mappedLogs = data.entries.map((entry: any) => {
+          // Status from action or details
+          let status: "Success" | "Failure" | "Warning" = "Success"
+          if (entry.details) {
+            if (entry.details.status === "Failure" || entry.details.error) {
+              status = "Failure"
+            } else if (entry.details.status === "Warning") {
+              status = "Warning"
+            }
+          }
+
+          return {
+            id: entry.id,
+            timestamp: entry.timestamp,
+            user: entry.actor_name || entry.actor_id || "system",
+            action: entry.action,
+            resource: entry.resource_type ? `${entry.resource_type}:${entry.resource_id}` : entry.resource_id || "none",
+            status
+          }
+        })
+        setLogs(mappedLogs)
+      } else {
+        setLogs([])
       }
     } catch (err) {
-      console.warn("Could not load audit logs from API, using fallback.", err)
+      console.warn("Could not load audit logs from API.", err)
+      setLogs([])
     } finally {
       setLoading(false)
     }
@@ -124,7 +142,13 @@ export default function AdminAuditPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredLogs.length === 0 ? (
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-10 text-zinc-500 text-sm">
+                      Syncing audit logs from database...
+                    </TableCell>
+                  </TableRow>
+                ) : filteredLogs.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-10 text-zinc-500 text-sm">
                       No logs found matching selection.
