@@ -36,7 +36,7 @@ export default function TrainerGroupsPage() {
   const [loading, setLoading] = React.useState(false)
   const [name, setName] = React.useState("")
   const [description, setDescription] = React.useState("")
-  const [awsAccount, setAwsAccount] = React.useState("123456789012")
+  const [awsAccount, setAwsAccount] = React.useState("")
   const [awsRegion, setAwsRegion] = React.useState("us-east-1")
   const [studentEmails, setStudentEmails] = React.useState("")
   const [autoGenCount, setAutoGenCount] = React.useState(0)
@@ -58,7 +58,7 @@ export default function TrainerGroupsPage() {
           id: g.id,
           name: g.name,
           studentCount: g.student_ids ? g.student_ids.length : 0,
-          awsRoleArn: `arn:aws:iam::${g.aws_account_id || '123456789012'}:role/AzureMIFederatedRole`,
+          awsRoleArn: `arn:aws:iam::${g.aws_account_id || '<AWS_ACCOUNT_ID>'}:role/AzureMIFederatedRole`,
           maxInstancesPerStudent: 2,
           status: "Active" as const
         }))
@@ -208,7 +208,7 @@ export default function TrainerGroupsPage() {
                       <Label htmlFor="awsAcc" className="text-zinc-400">AWS Account ID</Label>
                       <Input
                         id="awsAcc"
-                        placeholder="123456789012"
+                        placeholder="12-digit account ID"
                         value={awsAccount}
                         onChange={(e) => setAwsAccount(e.target.value)}
                         required

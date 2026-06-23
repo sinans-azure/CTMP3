@@ -42,6 +42,7 @@ export const msalConfig: Configuration = {
 
 export const loginRequest = {
   scopes: ["openid", "profile", "email"],
+  prompt: "select_account",
 };
 
 export const apiScopes = {

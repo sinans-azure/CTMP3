@@ -59,19 +59,19 @@ export function AppSidebar() {
       title: "Audit Log",
       url: "/admin/audit",
       icon: FileSpreadsheet,
-      roles: ["Admin"],
+      roles: ["Admin", "Trainer"],
     })
     items.push({
       title: "Analytics",
       url: "/admin/analytics",
       icon: BarChart3,
-      roles: ["Admin"],
+      roles: ["Admin", "Trainer"],
     })
     items.push({
       title: "Billing",
       url: "/admin/billing",
       icon: CreditCard,
-      roles: ["Admin"],
+      roles: ["Admin", "Trainer"],
     })
 
     // Trainer pages
@@ -110,7 +110,14 @@ export function AppSidebar() {
       })
     }
 
-    return items
+    const userRoles: string[] = []
+    if (isAdmin) userRoles.push("Admin")
+    if (isTrainer) userRoles.push("Trainer")
+    if (isStudent && !isAdmin && !isTrainer) userRoles.push("Student")
+
+    return items.filter((item) =>
+      item.roles.some((role) => userRoles.includes(role))
+    )
   }, [isAdmin, isTrainer, isStudent])
 
   return (

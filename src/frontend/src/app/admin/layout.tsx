@@ -20,7 +20,7 @@ export default function AdminLayout({
   }
 
   return (
-    <RoleGuard allowedRoles={["Admin"]}>
+    <RoleGuard allowedRoles={["Admin", "Trainer"]}>
       <SidebarProvider defaultOpen={true}>
         <div className="flex h-screen w-full overflow-hidden bg-zinc-950 text-zinc-50">
           <AppSidebar />

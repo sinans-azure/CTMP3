@@ -8,7 +8,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from app.dependencies import get_current_user, require_admin
+from app.dependencies import get_current_user, require_admin, require_admin_or_trainer
 from app.models import (
     AuditLogEntry,
     AuditLogResponse,
@@ -132,19 +132,52 @@ async def assign_role(
 
 @router.get("/audit-log", response_model=AuditLogResponse)
 async def get_audit_log(
-    claims: Annotated[dict, Depends(require_admin)],
+    claims: Annotated[dict, Depends(require_admin_or_trainer)],
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(20, ge=1, le=100, description="Items per page"),
 ) -> AuditLogResponse:
     """Retrieve paginated audit log."""
     from app.database import SessionLocal, AuditLog as DbAuditLog
+    roles = claims.get("roles", [])
+    is_admin = "Admin" in roles
+    user_oid = claims.get("oid") or claims.get("sub", "")
+    
     db = SessionLocal()
     try:
-        total = db.query(DbAuditLog).count()
+        query = db.query(DbAuditLog)
+        
+        if not is_admin:
+            # Caller is a trainer
+            # Get groups managed by the trainer
+            from app.database import TrainingGroup, user_group_association, EC2Instance
+            from sqlalchemy import or_
+            
+            group_ids = [g.id for g in db.query(TrainingGroup).filter(TrainingGroup.trainer_id == user_oid).all()]
+            
+            # Get student IDs in these groups
+            student_ids = [r[0] for r in db.query(user_group_association.c.user_id).filter(user_group_association.c.group_id.in_(group_ids)).all()] if group_ids else []
+            
+            # Get instance IDs in these groups
+            instance_ids = [inst.id for inst in db.query(EC2Instance).filter(EC2Instance.group_id.in_(group_ids)).all()] if group_ids else []
+            
+            # Filter logs
+            conditions = [
+                DbAuditLog.actor_id == user_oid
+            ]
+            if student_ids:
+                conditions.append(DbAuditLog.actor_id.in_(student_ids))
+            if group_ids:
+                conditions.append((DbAuditLog.resource_type == "group") & DbAuditLog.resource_id.in_(group_ids))
+            if instance_ids:
+                conditions.append((DbAuditLog.resource_type == "instance") & DbAuditLog.resource_id.in_(instance_ids))
+                
+            query = query.filter(or_(*conditions))
+            
+        total = query.count()
         start = (page - 1) * page_size
         
         # Order by timestamp desc
-        db_entries = db.query(DbAuditLog).order_by(DbAuditLog.timestamp.desc()).offset(start).limit(page_size).all()
+        db_entries = query.order_by(DbAuditLog.timestamp.desc()).offset(start).limit(page_size).all()
         
         entries = []
         for entry in db_entries:

@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { UserPlus, Shield, User, Trash2, Search, Users, FolderKanban } from "lucide-react"
+import { RoleGuard } from "@/components/auth/role-guard"
 
 interface UserRecord {
   id: string
@@ -125,7 +126,8 @@ export default function AdminUsersPage() {
   }, [users, search, activeTab])
 
   return (
-    <div className="space-y-6">
+    <RoleGuard allowedRoles={["Admin"]}>
+      <div className="space-y-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-zinc-50">Portal Directory</h1>
@@ -432,6 +434,7 @@ export default function AdminUsersPage() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </RoleGuard>
   )
 }

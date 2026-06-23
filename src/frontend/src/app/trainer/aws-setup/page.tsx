@@ -9,6 +9,9 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Download, Cloud, ExternalLink, Key, CheckCircle, ShieldCheck, Terminal, Copy } from "lucide-react"
 
+const tenantId = process.env.NEXT_PUBLIC_AZURE_AD_TENANT_ID || "";
+const clientId = process.env.NEXT_PUBLIC_AZURE_AD_CLIENT_ID || "";
+
 export default function TrainerAWSSetup() {
   const api = useApiClient()
   const [downloading, setDownloading] = React.useState(false)
@@ -19,33 +22,86 @@ export default function TrainerAWSSetup() {
   const handleDownloadTemplate = async () => {
     setDownloading(true)
     try {
-      // Calls POST /api/trainer/aws-template
-      await api.getDownload("/api/trainer/aws-template", "ctmp-aws-oidc.json")
+      const res = await api.post<{ template_yaml: string }>("/api/trainer/aws-template", {
+        azure_tenant_id: tenantId,
+        azure_client_id: clientId,
+        aws_role_name: "AzureMIFederatedRole"
+      })
+      if (res && res.template_yaml) {
+        const dataStr = "data:text/yaml;charset=utf-8," + encodeURIComponent(res.template_yaml)
+        const dlAnchor = document.createElement("a")
+        dlAnchor.setAttribute("href", dataStr)
+        dlAnchor.setAttribute("download", "ctmp-aws-oidc.yaml")
+        document.body.appendChild(dlAnchor)
+        dlAnchor.click()
+        dlAnchor.remove()
+      } else {
+        throw new Error("No template returned from API")
+      }
     } catch (err) {
       console.warn("Could not download template from API, generating client-side fallback download.", err)
       
-      // Generate client-side JSON download fallback
-      const mockTemplate = {
-        AWSTemplateFormatVersion: "2010-09-09",
-        Description: "CTMP OIDC Provider and IAM Role for Sandbox deployments",
-        Parameters: {
-          PortalURL: { Type: "String", Default: "https://portal.training.contoso.com" },
-          TenantID: { Type: "String", Description: "Azure AD Tenant ID" }
-        },
-        Resources: {
-          OIDCProvider: {
-            Type: "AWS::IAM::OIDCProvider",
-            Properties: {
-              Url: "https://login.microsoftonline.com/",
-              ClientIdList: ["https://portal.training.contoso.com"]
-            }
-          }
-        }
-      }
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(mockTemplate, null, 2))
+      // Fallback: Generate the real CloudFormation YAML template client-side
+      const fallbackTemplate = `AWSTemplateFormatVersion: '2010-09-09'
+Description: OIDC Trust Federation with Azure Active Directory (Entra ID) for EC2 management.
+
+Parameters:
+  AzureTenantID:
+    Type: String
+    Default: "${tenantId}"
+    Description: The Azure AD (Entra ID) Tenant ID.
+  AzureClientID:
+    Type: String
+    Default: "${clientId}"
+    Description: The Client ID of the Azure Managed Identity to trust.
+
+Resources:
+  AzureOIDCProvider:
+    Type: AWS::IAM::OIDCProvider
+    Properties:
+      Url: !Sub "https://sts.windows.net/\${AzureTenantID}/"
+      ClientIdList:
+        - !Ref AzureClientID
+      ThumbprintList:
+        - df3c24f9bfd666761b268073fe06d1cc8d4f82a4
+
+  AzureFederatedRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: "AzureMIFederatedRole"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Ref AzureOIDCProvider
+            Action: sts:AssumeRoleWithWebIdentity
+          Condition:
+            StringEquals:
+              sts.windows.net/${tenantId}/:aud: !Ref AzureClientID
+      Policies:
+        - PolicyName: EC2LifecycleManagement
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:StartInstances
+                  - ec2:StopInstances
+                  - ec2:RebootInstances
+                  - ec2:DescribeInstances
+                  - ec2:DescribeInstanceStatus
+                Resource: '*'
+
+Outputs:
+  RoleArn:
+    Description: ARN of the federated IAM Role to assume.
+    Value: !GetAtt AzureFederatedRole.Arn
+`
+      const dataStr = "data:text/yaml;charset=utf-8," + encodeURIComponent(fallbackTemplate)
       const dlAnchor = document.createElement("a")
       dlAnchor.setAttribute("href", dataStr)
-      dlAnchor.setAttribute("download", "ctmp-aws-oidc.json")
+      dlAnchor.setAttribute("download", "ctmp-aws-oidc.yaml")
       document.body.appendChild(dlAnchor)
       dlAnchor.click()
       dlAnchor.remove()
@@ -162,14 +218,14 @@ export default function TrainerAWSSetup() {
                   <span className="font-semibold text-zinc-300">Recommended Value</span>
                 </div>
                 <div className="grid grid-cols-3 gap-2 border-b border-zinc-900 pb-2 last:border-0 last:pb-0">
-                  <span className="font-mono text-indigo-400">CTMPPortalAudience</span>
-                  <span className="text-zinc-400">Application client audience ID</span>
-                  <span className="font-mono text-zinc-300 select-all">api://ctmp-app</span>
+                  <span className="font-mono text-indigo-400">AzureTenantID</span>
+                  <span className="text-zinc-400">Azure AD (Entra ID) Tenant ID</span>
+                  <span className="font-mono text-zinc-300 select-all">{tenantId || "N/A"}</span>
                 </div>
                 <div className="grid grid-cols-3 gap-2 border-b border-zinc-900 pb-2 last:border-0 last:pb-0">
-                  <span className="font-mono text-indigo-400">IssuerUrl</span>
-                  <span className="text-zinc-400">Microsoft Entra OIDC endpoint</span>
-                  <span className="font-mono text-zinc-300 select-all">https://login.microsoftonline.com/</span>
+                  <span className="font-mono text-indigo-400">AzureClientID</span>
+                  <span className="text-zinc-400">Application client ID</span>
+                  <span className="font-mono text-zinc-300 select-all">{clientId || "N/A"}</span>
                 </div>
               </div>
             </CardContent>
@@ -205,7 +261,7 @@ export default function TrainerAWSSetup() {
                     <Label htmlFor="roleArnInput" className="text-xs text-zinc-400">AWS Role ARN</Label>
                     <Input
                       id="roleArnInput"
-                      placeholder="arn:aws:iam::123456789012:role/CTMP-Group-OIDC-Role"
+                      placeholder="arn:aws:iam::<AWS_ACCOUNT_ID>:role/<ROLE_NAME>"
                       value={roleArn}
                       onChange={(e) => setRoleArn(e.target.value)}
                       required

@@ -194,3 +194,15 @@ def require_admin(claims: Annotated[dict, Depends(get_current_user)]) -> dict:
             detail="Admin role required",
         )
     return claims
+
+
+def require_admin_or_trainer(claims: Annotated[dict, Depends(get_current_user)]) -> dict:
+    """Require the user to have the Admin or Trainer role."""
+    roles = claims.get("roles", [])
+    if "Admin" not in roles and "Trainer" not in roles:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin or Trainer role required",
+        )
+    return claims
+
