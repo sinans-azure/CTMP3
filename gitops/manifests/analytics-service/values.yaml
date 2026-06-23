@@ -1,7 +1,7 @@
 replicaCount: 1
 image:
   repository: ctmp3acr.azurecr.io/analytics-service
-  tag: 0.0.16
+  tag: 0.0.18
   pullPolicy: IfNotPresent
 service:
   type: ClusterIP
