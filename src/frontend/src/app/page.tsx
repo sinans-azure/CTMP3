@@ -27,11 +27,6 @@ export default function LandingPage() {
           <a href="#credentials" className="hover:text-zinc-50 transition-colors">Demo Credentials</a>
         </nav>
         <div className="flex items-center gap-3">
-          <Link href="/admin">
-            <Button variant="ghost" className="text-zinc-400 hover:text-zinc-50 hover:bg-zinc-900 text-xs sm:text-sm">
-              Admin Portal
-            </Button>
-          </Link>
           <Link href="/login">
             <Button className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs sm:text-sm shadow-lg shadow-indigo-600/20">
               Sign In
@@ -52,16 +47,17 @@ export default function LandingPage() {
         <p className="text-zinc-400 text-base sm:text-xl max-w-2xl mx-auto font-normal leading-relaxed">
           Provision sandboxes, manage training cohorts, and track active student virtual machines securely using Azure Database for PostgreSQL and AWS OIDC Trust Federation.
         </p>
-        <div className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-4">
-          <Link href="/login">
-            <Button size="lg" className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-500 text-white text-base font-semibold px-8 py-6 h-12 shadow-lg shadow-indigo-600/30 flex items-center gap-2">
-              Trainer & Student Login
-              <ArrowRight className="h-5 w-5" />
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-4 w-full max-w-lg mx-auto">
+          <Link href="/login?role=trainer" className="w-full sm:w-auto">
+            <Button size="lg" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold px-6 py-6 h-12 shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2">
+              <ShieldCheck className="h-4 w-4" />
+              Instructor Portal
             </Button>
           </Link>
-          <Link href="/admin">
-            <Button size="lg" variant="outline" className="w-full sm:w-auto border-zinc-800 bg-zinc-900/50 hover:bg-zinc-900 text-zinc-300 hover:text-zinc-50 text-base font-semibold px-8 py-6 h-12">
-              System Admin Entrance
+          <Link href="/login?role=student" className="w-full sm:w-auto">
+            <Button size="lg" className="w-full bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-100 hover:text-zinc-50 text-sm font-bold px-6 py-6 h-12 shadow-lg shadow-zinc-950 flex items-center justify-center gap-2">
+              <Terminal className="h-4 w-4" />
+              Student Portal
             </Button>
           </Link>
         </div>
@@ -142,14 +138,7 @@ export default function LandingPage() {
         <p className="text-sm text-zinc-400">
           Use the following pre-seeded credentials to explore the portal features after clicking Sign In:
         </p>
-        <div className="grid gap-4 sm:grid-cols-3 text-sm">
-          <div className="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800 space-y-2">
-            <span className="font-semibold text-indigo-400 text-xs uppercase tracking-wider block">Admin Portal</span>
-            <div className="space-y-1 text-xs text-zinc-300 font-mono">
-              <p>Username: admin1</p>
-              <p>Password: Password123</p>
-            </div>
-          </div>
+        <div className="grid gap-4 sm:grid-cols-2 text-sm">
           <div className="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800 space-y-2">
             <span className="font-semibold text-indigo-400 text-xs uppercase tracking-wider block">Trainer Portal</span>
             <div className="space-y-1 text-xs text-zinc-300 font-mono">

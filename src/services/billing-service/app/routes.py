@@ -20,15 +20,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/billing", tags=["billing"])
 
 # --- Mock Data ---
-_mock_cost_records = [
-    {"date": datetime(2026, 6, 10), "amount": 12.50, "group_id": "group-101", "student_id": "user-003"},
-    {"date": datetime(2026, 6, 11), "amount": 14.20, "group_id": "group-101", "student_id": "user-003"},
-    {"date": datetime(2026, 6, 12), "amount": 15.10, "group_id": "group-101", "student_id": "user-003"},
-    {"date": datetime(2026, 6, 13), "amount": 8.40, "group_id": "group-101", "student_id": "user-004"},
-    {"date": datetime(2026, 6, 14), "amount": 9.30, "group_id": "group-101", "student_id": "user-004"},
-    {"date": datetime(2026, 6, 15), "amount": 28.50, "group_id": "group-102", "student_id": "user-003"},
-    {"date": datetime(2026, 6, 16), "amount": 30.10, "group_id": "group-102", "student_id": "user-003"},
-]
+_mock_cost_records = []
 
 
 @router.get("/costs", response_model=CostResponse)

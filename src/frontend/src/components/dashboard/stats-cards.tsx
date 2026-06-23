@@ -16,38 +16,40 @@ interface StatsCardsProps {
 
 export function StatsCards({ data }: StatsCardsProps) {
   const stats = React.useMemo(() => {
-    const active = data?.activeInstances ?? 12
-    const students = data?.totalStudents ?? 48
-    const spend = data?.monthlySpend ?? 1240.50
-    const budget = data?.budgetLimit ?? 2500.00
-    const uptime = data?.uptimePercent ?? 99.8
+    const active = data?.activeInstances ?? 0
+    const students = data?.totalStudents ?? 0
+    const spend = data?.monthlySpend ?? 0.0
+    const budget = data?.budgetLimit ?? 500.00
+    const uptime = data?.uptimePercent ?? 100.0
+
+    const budgetUtilization = budget > 0 ? Math.round((spend / budget) * 100) : 0
 
     return [
       {
         title: "Active Instances",
         value: `${active} / 25`,
-        description: "Currently running EC2 VMs",
+        description: active === 0 ? "Go to Sandboxes to provision a VM" : "Currently running EC2 VMs",
         icon: Server,
         color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
       },
       {
         title: "Total Students",
         value: students.toString(),
-        description: "Across active training sessions",
+        description: students === 0 ? "No student accounts created yet" : "Across active training sessions",
         icon: Users,
         color: "text-blue-400 bg-blue-500/10 border-blue-500/20",
       },
       {
         title: "Monthly Budget",
-        value: `$${spend.toLocaleString()} / $${budget.toLocaleString()}`,
-        description: `${Math.round((spend / budget) * 100)}% of limit utilized`,
+        value: `$${spend.toFixed(2)} / $${budget.toFixed(2)}`,
+        description: spend === 0 ? "No spending. Start VMs to log costs" : `${budgetUtilization}% of limit utilized`,
         icon: DollarSign,
         color: "text-indigo-400 bg-indigo-500/10 border-indigo-500/20",
       },
       {
         title: "System Uptime",
         value: `${uptime}%`,
-        description: "AWS cloud connection health",
+        description: "AWS cloud connection online",
         icon: Clock,
         color: "text-amber-400 bg-amber-500/10 border-amber-500/20",
       },

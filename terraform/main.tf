@@ -355,6 +355,71 @@ resource "azurerm_dns_a_record" "argocd" {
   depends_on = [module.networking]
 }
 
+# =============================================================================
+# Azure Monitor Diagnostic Settings
+# =============================================================================
+# Routes logs and metrics from AKS, App Gateway, Key Vault, and PostgreSQL
+# to the central Log Analytics Workspace.
+# =============================================================================
+
+resource "azurerm_monitor_diagnostic_setting" "aks" {
+  name                       = "${var.prefix}-aks-diag"
+  target_resource_id         = module.aks.aks_cluster_id
+  log_analytics_workspace_id = module.aks.log_analytics_workspace_id
+
+  enabled_log {
+    category_group = "allLogs"
+  }
+
+  enabled_metric {
+    category = "AllMetrics"
+  }
+}
+
+resource "azurerm_monitor_diagnostic_setting" "appgw" {
+  name                       = "${var.prefix}-appgw-diag"
+  target_resource_id         = module.app_gateway.app_gateway_id
+  log_analytics_workspace_id = module.aks.log_analytics_workspace_id
+
+  enabled_log {
+    category_group = "allLogs"
+  }
+
+  enabled_metric {
+    category = "AllMetrics"
+  }
+}
+
+resource "azurerm_monitor_diagnostic_setting" "keyvault" {
+  name                       = "${var.prefix}-kv-diag"
+  target_resource_id         = module.key_vault.key_vault_id
+  log_analytics_workspace_id = module.aks.log_analytics_workspace_id
+
+  enabled_log {
+    category_group = "allLogs"
+  }
+
+  enabled_metric {
+    category = "AllMetrics"
+  }
+}
+
+resource "azurerm_monitor_diagnostic_setting" "database" {
+  name                       = "${var.prefix}-db-diag"
+  target_resource_id         = module.database.server_id
+  log_analytics_workspace_id = module.aks.log_analytics_workspace_id
+
+  enabled_log {
+    category_group = "allLogs"
+  }
+
+  enabled_metric {
+    category = "AllMetrics"
+  }
+}
+
+
+
 
 
 

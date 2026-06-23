@@ -22,6 +22,38 @@ function LoginContent() {
   const [tokenLoading, setTokenLoading] = React.useState(false)
   const [showCredentials, setShowCredentials] = React.useState(false)
 
+  const role = searchParams.get("role")
+
+  const portalTitle = React.useMemo(() => {
+    if (role === "trainer") return "Instructor Console"
+    if (role === "student") return "Student Lab Portal"
+    return "Sign In to CTMP"
+  }, [role])
+
+  const portalDescription = React.useMemo(() => {
+    if (role === "trainer") return "Trainer and course coordinator sign-in."
+    if (role === "student") return "Student and cohort participant sign-in."
+    return "Trainer and Student portal entrance."
+  }, [role])
+
+  const cardTitle = React.useMemo(() => {
+    if (role === "trainer") return "Instructor Access"
+    if (role === "student") return "Student Lab Access"
+    return "Portal Access"
+  }, [role])
+
+  const cardDescription = React.useMemo(() => {
+    if (role === "trainer") return "Sign in to manage cohorts, sandboxes, and view cost metrics."
+    if (role === "student") return "Sign in to view your assigned sandboxes and launch virtual machines."
+    return "Sign in with your corporate account or use emergency local credentials."
+  }, [role])
+
+  const usernamePlaceholder = React.useMemo(() => {
+    if (role === "trainer") return "e.g. trainer1"
+    if (role === "student") return "e.g. student1"
+    return "e.g. trainer1 or student1"
+  }, [role])
+
   // Redirect to dashboard if already authenticated with MSAL
   React.useEffect(() => {
     if (accounts.length > 0) {
@@ -118,18 +150,18 @@ function LoginContent() {
             <Terminal className="h-6 w-6" />
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight text-zinc-50">
-            Sign In to CTMP
+            {portalTitle}
           </h1>
           <p className="text-sm text-zinc-400">
-            Trainer and Student portal entrance.
+            {portalDescription}
           </p>
         </div>
 
         <Card className="border-zinc-800 bg-zinc-950/60 shadow-2xl">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-xl font-bold">Portal Access</CardTitle>
+            <CardTitle className="text-xl font-bold">{cardTitle}</CardTitle>
             <CardDescription className="text-xs text-zinc-400">
-              Sign in with your corporate account or local credentials.
+              {cardDescription}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -166,7 +198,7 @@ function LoginContent() {
                   <Input
                     id="username"
                     type="text"
-                    placeholder="e.g. trainer1 or student1"
+                    placeholder={usernamePlaceholder}
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required

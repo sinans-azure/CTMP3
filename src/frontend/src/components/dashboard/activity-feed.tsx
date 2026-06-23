@@ -4,7 +4,7 @@ import * as React from "react"
 import { useMsal } from "@azure/msal-react"
 import { apiScopes, API_BASE_URL } from "@/lib/msal-config"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Activity, Radio, AlertCircle, CheckCircle2 } from "lucide-react"
+import { Activity, AlertCircle, CheckCircle2 } from "lucide-react"
 
 interface FeedActivity {
   id: string
@@ -17,32 +17,7 @@ interface FeedActivity {
 
 export function ActivityFeed() {
   const { instance, accounts } = useMsal()
-  const [activities, setActivities] = React.useState<FeedActivity[]>([
-    {
-      id: "1",
-      user: "john.doe@contoso.com",
-      action: "Created EC2 Instance",
-      resource: "i-09d2983f82a173",
-      timestamp: new Date(Date.now() - 5000 * 60).toISOString(),
-      status: "success",
-    },
-    {
-      id: "2",
-      user: "trainer.jane@contoso.com",
-      action: "Configured OIDC Role",
-      resource: "arn:aws:iam::123456789012:role/CTMP-OIDC-Role",
-      timestamp: new Date(Date.now() - 12000 * 60).toISOString(),
-      status: "success",
-    },
-    {
-      id: "3",
-      user: "billing.system@contoso.com",
-      action: "Budget Limit Warning (80%)",
-      resource: "Budget: CTMP-June",
-      timestamp: new Date(Date.now() - 45000 * 60).toISOString(),
-      status: "warning",
-    },
-  ])
+  const [activities, setActivities] = React.useState<FeedActivity[]>([])
   const [isConnected, setIsConnected] = React.useState(false)
 
   React.useEffect(() => {
@@ -59,7 +34,7 @@ export function ActivityFeed() {
         const token = tokenResponse.accessToken
 
         // Establish SSE connection passing token in query
-        const url = `${API_BASE_URL}/api/audit/stream?token=${encodeURIComponent(token)}`
+        const url = `${API_BASE_URL}/api/analytics/activity?token=${encodeURIComponent(token)}`
         eventSource = new EventSource(url)
 
         eventSource.onopen = () => {
@@ -94,39 +69,12 @@ export function ActivityFeed() {
 
     initSSE()
 
-    // Add a simulated log generator if not connected, to showcase visual premium fidelity
-    const interval = setInterval(() => {
-      if (!isConnected) {
-        const mockUsers = ["admin@contoso.com", "trainer.bob@contoso.com", "student.alice@contoso.com"]
-        const mockActions = ["Started Instance", "Stopped Instance", "Joined Training Group", "Generated AWS Template"]
-        const mockResources = ["i-0a8b9c10d", "i-09d2983f82a173", "Group: AWS-101", "cfn-oidc.json"]
-        const mockStatuses: Array<"success" | "warning" | "info"> = ["success", "info", "warning"]
-
-        const randomUser = mockUsers[Math.floor(Math.random() * mockUsers.length)]
-        const randomAction = mockActions[Math.floor(Math.random() * mockActions.length)]
-        const randomResource = mockResources[Math.floor(Math.random() * mockResources.length)]
-        const randomStatus = mockStatuses[Math.floor(Math.random() * mockStatuses.length)]
-
-        const newAct: FeedActivity = {
-          id: Math.random().toString(),
-          user: randomUser,
-          action: randomAction,
-          resource: randomResource,
-          timestamp: new Date().toISOString(),
-          status: randomStatus,
-        }
-
-        setActivities((prev) => [newAct, ...prev.slice(0, 8)])
-      }
-    }, 15000)
-
     return () => {
       if (eventSource) {
         eventSource.close()
       }
-      clearInterval(interval)
     }
-  }, [accounts, instance, isConnected])
+  }, [accounts, instance])
 
   return (
     <Card className="bg-zinc-950/40 backdrop-blur-md border border-zinc-800/80">
@@ -139,15 +87,15 @@ export function ActivityFeed() {
         </div>
         <div className="flex items-center gap-1.5 rounded-full bg-zinc-900 border border-zinc-800 px-2.5 py-1 text-xs text-zinc-400">
           <span className={`h-1.5 w-1.5 rounded-full ${isConnected ? "bg-emerald-500 animate-pulse" : "bg-zinc-600"}`} />
-          {isConnected ? "Connected" : "Simulated"}
+          {isConnected ? "Connected" : "Disconnected"}
         </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-4 max-h-[350px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-zinc-800">
           {activities.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-center text-zinc-500 text-xs">
-              <Activity className="h-8 w-8 mb-2 stroke-1" />
-              Waiting for events...
+              <Activity className="h-8 w-8 mb-2 stroke-1 text-indigo-400" />
+              <span>No platform activity logs recorded. Launch or manage virtual machines to initialize the audit trail.</span>
             </div>
           ) : (
             activities.map((activity) => (

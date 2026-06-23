@@ -92,3 +92,9 @@ output "agic_identity_object_id" {
   description = "Object ID of the AGIC managed identity."
   value       = azurerm_kubernetes_cluster.main.ingress_application_gateway[0].ingress_application_gateway_identity[0].object_id
 }
+
+output "log_analytics_workspace_id" {
+  description = "Resource ID of the Log Analytics Workspace."
+  value       = azurerm_log_analytics_workspace.aks.id
+}
+
