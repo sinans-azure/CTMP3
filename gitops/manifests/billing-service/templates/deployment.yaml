@@ -33,6 +33,8 @@ spec:
               value: "{{ .Values.env.USE_ENTRA_DB_AUTH }}"
             - name: DB_USER
               value: "{{ .Values.env.DB_USER }}"
+            - name: AZURE_CLIENT_ID
+              value: "{{ .Values.workloadIdentity.clientId }}"
           envFrom:
             - configMapRef:
                 name: {{ .Values.configMapName }}
