@@ -89,13 +89,11 @@ async def get_visible_instances(
             return []
             
         assigned_group_ids = [g.id for g in student.groups]
+        if not assigned_group_ids:
+            return []
         
         from app.database import EC2Instance as DbInstance
         db_instances = db.query(DbInstance).filter(DbInstance.group_id.in_(assigned_group_ids)).all()
-        
-        # Fallback to all instances if no groups assigned (demo helper)
-        if not db_instances:
-            db_instances = db.query(DbInstance).all()
             
         result = []
         for inst in db_instances:
@@ -149,8 +147,13 @@ async def dispatch_instance_action(
             )
 
         group = db.query(DbGroup).filter(DbGroup.id == group_id).first()
-        aws_region = group.aws_region if group else "us-east-1"
-        aws_role_arn = f"arn:aws:iam::{group.aws_account_id if group else '123456789012'}:role/AzureMIFederatedRole"
+        if not group:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Group {group_id} not found",
+            )
+        aws_region = group.aws_region or "us-east-1"
+        aws_role_arn = f"arn:aws:iam::{group.aws_account_id}:role/AzureMIFederatedRole"
 
         # Prepare message body
         action_message = {

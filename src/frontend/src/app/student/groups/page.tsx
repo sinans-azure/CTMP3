@@ -18,9 +18,7 @@ interface StudentGroup {
 
 export default function StudentGroupsPage() {
   const api = useApiClient()
-  const [groups, setGroups] = React.useState<StudentGroup[]>([
-    { id: "g1", name: "AWS-101-Morning", trainerName: "Jane Smith", maxInstancesPerStudent: 2, awsRoleArn: "arn:aws:iam::123456789012:role/TrainerRole", status: "Active" }
-  ])
+  const [groups, setGroups] = React.useState<StudentGroup[]>([])
 
   React.useEffect(() => {
     const fetchGroups = async () => {

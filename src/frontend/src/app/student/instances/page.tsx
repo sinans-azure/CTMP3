@@ -18,9 +18,7 @@ interface InstanceItem {
 
 export default function StudentInstancesPage() {
   const api = useApiClient()
-  const [instances, setInstances] = React.useState<InstanceItem[]>([
-    { id: "i1", instanceId: "i-09d2983f82a173", instanceType: "t3.medium", status: "Running", launchTime: "2026-06-18T08:30:00Z" }
-  ])
+  const [instances, setInstances] = React.useState<InstanceItem[]>([])
   const [loading, setLoading] = React.useState(false)
   const [provisioning, setProvisioning] = React.useState(false)
 

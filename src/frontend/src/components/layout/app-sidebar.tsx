@@ -57,19 +57,19 @@ export function AppSidebar() {
     })
     items.push({
       title: "Audit Log",
-      url: "/admin/audit",
+      url: isAdmin ? "/admin/audit" : "/trainer/audit",
       icon: FileSpreadsheet,
       roles: ["Admin", "Trainer"],
     })
     items.push({
       title: "Analytics",
-      url: "/admin/analytics",
+      url: isAdmin ? "/admin/analytics" : "/trainer/analytics",
       icon: BarChart3,
       roles: ["Admin", "Trainer"],
     })
     items.push({
       title: "Billing",
-      url: "/admin/billing",
+      url: isAdmin ? "/admin/billing" : "/trainer/billing",
       icon: CreditCard,
       roles: ["Admin", "Trainer"],
     })

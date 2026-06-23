@@ -153,10 +153,6 @@ async def get_trainer_groups(
     try:
         trainer_id = claims.get("sub", "")
         db_groups = db.query(DbGroup).filter(DbGroup.trainer_id == trainer_id).all()
-        
-        # Fallback to all groups if none assigned to this trainer (e.g. for demo)
-        if not db_groups:
-            db_groups = db.query(DbGroup).all()
             
         result = []
         for g in db_groups:
@@ -239,19 +235,6 @@ async def create_group_with_students(
             
             # Associate user with group
             db_group.students.append(db_user)
-            db.commit()
-            
-            # Seed a mock EC2 instance for the student
-            inst_id = f"i-{uuid.uuid4().hex[:17]}"
-            db_instance = DbInstance(
-                id=inst_id,
-                name=f"sandbox-vm-{username}",
-                state="stopped",
-                instance_type="t3.micro",
-                group_id=group_id,
-                student_id=student_id
-            )
-            db.add(db_instance)
             db.commit()
             
             login_link = f"http://localhost:3000/login?token={invite_token}"
