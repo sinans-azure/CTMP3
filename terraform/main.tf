@@ -31,6 +31,10 @@ terraform {
       source  = "Azure/azapi"
       version = "~> 2.0"
     }
+    time = {
+      source  = "hashicorp/time"
+      version = "~> 0.11"
+    }
   }
 
   backend "azurerm" {
@@ -165,6 +169,19 @@ module "key_vault" {
 
   key_vault_admin_object_ids = [data.azurerm_client_config.current.object_id]
   runner_ip                  = var.runner_ip
+}
+
+# =============================================================================
+# Key Vault Secrets
+# =============================================================================
+
+resource "azurerm_key_vault_secret" "user_portal_client_id" {
+  name         = "user-portal-client-id"
+  value        = var.user_portal_client_id
+  key_vault_id = module.key_vault.key_vault_id
+
+  # Only create the secret if the variable is provided
+  count = var.user_portal_client_id != "" ? 1 : 0
 }
 
 # =============================================================================

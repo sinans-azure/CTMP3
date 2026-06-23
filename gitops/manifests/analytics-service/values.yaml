@@ -34,5 +34,9 @@ resources:
 env:
   USE_ENTRA_DB_AUTH: "true"
   DB_USER: "ctmp3-workload-identity"
+keyvaultName: "ctmp3-kv"
+tenantId: "3e054dd4-88ff-476b-a5bc-14338ac07215"
+workloadIdentity:
+  clientId: ""
 configMapName: analytics-service-config
 secretName: analytics-service-secrets

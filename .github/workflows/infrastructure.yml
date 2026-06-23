@@ -20,6 +20,7 @@ env:
   ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
   ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
   ARM_USE_OIDC: true
+  TF_VAR_user_portal_client_id: ${{ secrets.NEXT_PUBLIC_AZURE_AD_CLIENT_ID }}
 
 jobs:
   terraform:
@@ -151,7 +152,9 @@ jobs:
             ../gitops/manifests/admin-service/values.yaml \
             ../gitops/manifests/auth-service/values.yaml \
             ../gitops/manifests/student-service/values.yaml \
-            ../gitops/manifests/trainer-service/values.yaml
+            ../gitops/manifests/trainer-service/values.yaml \
+            ../gitops/manifests/analytics-service/values.yaml \
+            ../gitops/manifests/billing-service/values.yaml
           do
             yq -i '.workloadIdentity.clientId = strenv(WORKLOAD_CLIENT_ID)' "$values_file"
           done
@@ -165,7 +168,9 @@ jobs:
             ../gitops/manifests/admin-service/values.yaml \
             ../gitops/manifests/auth-service/values.yaml \
             ../gitops/manifests/student-service/values.yaml \
-            ../gitops/manifests/trainer-service/values.yaml
+            ../gitops/manifests/trainer-service/values.yaml \
+            ../gitops/manifests/analytics-service/values.yaml \
+            ../gitops/manifests/billing-service/values.yaml
           if git diff --cached --quiet; then
             echo "GitOps workload identity values are already current."
           else

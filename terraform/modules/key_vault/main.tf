@@ -89,3 +89,10 @@ resource "azurerm_role_assignment" "kv_reader" {
   role_definition_name = "Key Vault Secrets User"
   principal_id         = var.key_vault_reader_object_ids[count.index]
 }
+
+# --- Delay downstream actions to allow firewall rules to propagate ---
+resource "time_sleep" "wait_for_firewall" {
+  depends_on = [azurerm_key_vault.main]
+
+  create_duration = "60s"
+}

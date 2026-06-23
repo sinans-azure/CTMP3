@@ -63,7 +63,16 @@ spec:
           volumeMounts:
             - name: tmp
               mountPath: /tmp
+            - name: secrets-store-inline
+              mountPath: "/mnt/secrets"
+              readOnly: true
       volumes:
         - name: tmp
           emptyDir: {}
+        - name: secrets-store-inline
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "{{ .Release.Name }}-secrets-provider"
       restartPolicy: Always

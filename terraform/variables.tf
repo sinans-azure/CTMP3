@@ -132,5 +132,12 @@ variable "runner_ip" {
   default     = ""
 }
 
+variable "user_portal_client_id" {
+  description = "Client ID of the ctmp3-user-portal App Registration used for MSAL login"
+  type        = string
+  default     = ""
+}
+
+
 
 
