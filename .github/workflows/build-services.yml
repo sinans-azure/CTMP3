@@ -6,6 +6,7 @@ on:
     paths:
       - 'src/services/**'
       - 'src/frontend/**'
+  workflow_dispatch:
 
 permissions:
   id-token: write
