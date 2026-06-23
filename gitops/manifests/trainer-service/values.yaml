@@ -1,7 +1,7 @@
 replicaCount: 1
 image:
   repository: ctmp3acr.azurecr.io/trainer-service
-  tag: 0.0.8
+  tag: 0.0.12
   pullPolicy: IfNotPresent
 service:
   type: ClusterIP
