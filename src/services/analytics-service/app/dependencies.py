@@ -94,24 +94,44 @@ async def get_current_user(
             },
         )
 
-        # Normalize and resolve roles dynamically
-        roles = claims.get("roles", [])
-        if isinstance(roles, str):
-            roles = [roles]
-        roles = list(roles)
+        # Resolve roles dynamically from AD groups or app roles
+        import os
+
+        roles_list = claims.get("roles", [])
+        if isinstance(roles_list, str):
+            roles_list = [roles_list]
+        roles_lower = [r.lower() for r in roles_list]
         
-        groups = claims.get("groups", [])
-        if isinstance(groups, str):
-            groups = [groups]
-        groups = [str(g) for g in groups]
+        groups_list = claims.get("groups", [])
+        if isinstance(groups_list, str):
+            groups_list = [groups_list]
+        groups_lower = [str(g).lower() for g in groups_list]
         
-        email = (claims.get("email") or claims.get("preferred_username") or "").lower()
-        username = (claims.get("preferred_username") or "").lower()
-        name = (claims.get("name") or "").lower()
+        admin_group = os.environ.get("AZURE_AD_ADMIN_GROUP_ID", "").lower()
+        trainer_group = os.environ.get("AZURE_AD_TRAINER_GROUP_ID", "").lower()
+        student_group = os.environ.get("AZURE_AD_STUDENT_GROUP_ID", "").lower()
         
-        is_admin = "admin" in [r.lower() for r in roles] or any("admin" in g.lower() for g in groups) or email.startswith("admin") or username.startswith("admin") or "admin" in name
-        is_trainer = "trainer" in [r.lower() for r in roles] or any("trainer" in g.lower() for g in groups) or "trainer" in email or "trainer" in username or "trainer" in name
+        is_admin = False
+        is_trainer = False
+        is_student = False
         
+        # 1. Match by AD group Object ID
+        if admin_group and admin_group in groups_lower:
+            is_admin = True
+        elif trainer_group and trainer_group in groups_lower:
+            is_trainer = True
+        elif student_group and student_group in groups_lower:
+            is_student = True
+            
+        # 2. Match by App Roles claim
+        if not (is_admin or is_trainer or is_student):
+            if "admin" in roles_lower:
+                is_admin = True
+            elif "trainer" in roles_lower:
+                is_trainer = True
+            elif "student" in roles_lower:
+                is_student = True
+                
         resolved_roles = []
         if is_admin:
             resolved_roles.append("Admin")

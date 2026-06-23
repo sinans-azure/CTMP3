@@ -66,13 +66,36 @@ export function useAuth(): AuthUser {
     }
 
     const account = accounts[0];
-    const claims = (account.idTokenClaims || {}) as IdTokenClaims;
-    const email = (account.username || claims.preferred_username || claims.email || "").toLowerCase();
-    const name = (account.name || claims.name || "User").toLowerCase();
+    const claims = (account.idTokenClaims || {}) as IdTokenClaims & { groups?: string[] };
     const rawRoles = claims.roles || [];
+    const groups = claims.groups || [];
 
-    const isUserAdmin = rawRoles.includes(AppRoles.Admin) || email.startsWith("admin") || email.includes("admin@") || name.includes("admin");
-    const isUserTrainer = rawRoles.includes(AppRoles.Trainer) || email.includes("trainer") || name.includes("trainer");
+    const adminGroupId = process.env.NEXT_PUBLIC_AZURE_AD_ADMIN_GROUP_ID || "";
+    const trainerGroupId = process.env.NEXT_PUBLIC_AZURE_AD_TRAINER_GROUP_ID || "";
+    const studentGroupId = process.env.NEXT_PUBLIC_AZURE_AD_STUDENT_GROUP_ID || "";
+
+    let isUserAdmin = rawRoles.includes(AppRoles.Admin);
+    let isUserTrainer = rawRoles.includes(AppRoles.Trainer);
+    let isUserStudent = rawRoles.includes(AppRoles.Student);
+
+    if (adminGroupId && groups.includes(adminGroupId)) {
+      isUserAdmin = true;
+      isUserTrainer = false;
+      isUserStudent = false;
+    } else if (trainerGroupId && groups.includes(trainerGroupId)) {
+      isUserTrainer = true;
+      isUserAdmin = false;
+      isUserStudent = false;
+    } else if (studentGroupId && groups.includes(studentGroupId)) {
+      isUserStudent = true;
+      isUserAdmin = false;
+      isUserTrainer = false;
+    }
+
+    // Default fallback if nothing matches
+    if (!isUserAdmin && !isUserTrainer && !isUserStudent) {
+      isUserStudent = true;
+    }
 
     const resolvedRoles: string[] = [];
     if (isUserAdmin) {
@@ -81,7 +104,7 @@ export function useAuth(): AuthUser {
     if (isUserTrainer) {
       resolvedRoles.push("Trainer");
     }
-    if (resolvedRoles.length === 0) {
+    if (isUserStudent) {
       resolvedRoles.push("Student");
     }
 
@@ -91,7 +114,7 @@ export function useAuth(): AuthUser {
       roles: resolvedRoles,
       isAdmin: isUserAdmin,
       isTrainer: isUserTrainer && !isUserAdmin,
-      isStudent: !isUserAdmin && !isUserTrainer,
+      isStudent: isUserStudent && !isUserAdmin && !isUserTrainer,
       isAuthenticated: true,
       userId: claims.oid || account.localAccountId || "",
     };

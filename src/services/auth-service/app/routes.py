@@ -45,32 +45,71 @@ async def get_current_user_profile(
         groups = [groups]
     groups = [str(g) for g in groups]
         
-    # Determine resolved role
+    import os
+    
+    # Extract roles and groups from claims
     roles_lower = [r.lower() for r in roles]
     groups_lower = [str(g).lower() for g in groups]
-    username_lower = username.lower()
-    email_lower = email.lower()
-    name_lower = name.lower()
     
+    # Query database to check if user already exists
+    db = SessionLocal()
+    db_user_role = None
+    existing_user = None
+    try:
+        existing_user = db.query(DbUser).filter((DbUser.id == oid) | (DbUser.email == email)).first()
+        if existing_user:
+            db_user_role = existing_user.role
+    except Exception as e:
+        logger.error(f"Error querying existing user in DB: {e}")
+        
+    # Resolve role using Groups / App Roles / DB Fallback
+    admin_group = os.environ.get("AZURE_AD_ADMIN_GROUP_ID", "").lower()
+    trainer_group = os.environ.get("AZURE_AD_TRAINER_GROUP_ID", "").lower()
+    student_group = os.environ.get("AZURE_AD_STUDENT_GROUP_ID", "").lower()
+    
+    is_admin = False
+    is_trainer = False
+    is_student = False
+    
+    if admin_group and admin_group in groups_lower:
+        is_admin = True
+    elif trainer_group and trainer_group in groups_lower:
+        is_trainer = True
+    elif student_group and student_group in groups_lower:
+        is_student = True
+        
+    if not (is_admin or is_trainer or is_student):
+        if "admin" in roles_lower:
+            is_admin = True
+        elif "trainer" in roles_lower:
+            is_trainer = True
+        elif "student" in roles_lower:
+            is_student = True
+            
+    if not (is_admin or is_trainer or is_student) and db_user_role:
+        role_val = db_user_role.lower()
+        if role_val == "admin":
+            is_admin = True
+        elif role_val == "trainer":
+            is_trainer = True
+        elif role_val == "student":
+            is_student = True
+            
     determined_role = "Student"
-    if "admin" in roles_lower or any("admin" in g for g in groups_lower) or username_lower.startswith("admin") or email_lower.startswith("admin") or "admin" in name_lower:
+    if is_admin:
         determined_role = "Admin"
-    elif "trainer" in roles_lower or any("trainer" in g for g in groups_lower) or "trainer" in username_lower or "trainer" in email_lower or "trainer" in name_lower:
+    elif is_trainer:
         determined_role = "Trainer"
         
-    # Normalize roles list in claims/response
     if determined_role not in roles:
         roles.append(determined_role)
         
     # Sync to DB if not mock
     sub_val = claims.get("sub", "")
     if sub_val and not sub_val.startswith("mock-"):
-        db = SessionLocal()
         try:
-            # Check by oid or email
-            user = db.query(DbUser).filter((DbUser.id == oid) | (DbUser.email == email)).first()
-            if not user:
-                user = DbUser(
+            if not existing_user:
+                new_user = DbUser(
                     id=oid,
                     username=username,
                     email=email,
@@ -78,22 +117,21 @@ async def get_current_user_profile(
                     name=name,
                     role=determined_role
                 )
-                db.add(user)
+                db.add(new_user)
                 logger.info(f"SSO: Synced new user {username} with role {determined_role} to DB")
             else:
-                # Update details if changed
                 changed = False
-                if user.role != determined_role:
-                    user.role = determined_role
+                if existing_user.role != determined_role:
+                    existing_user.role = determined_role
                     changed = True
-                if user.name != name:
-                    user.name = name
+                if existing_user.name != name:
+                    existing_user.name = name
                     changed = True
-                if user.email != email:
-                    user.email = email
+                if existing_user.email != email:
+                    existing_user.email = email
                     changed = True
                 if changed:
-                    db.add(user)
+                    db.add(existing_user)
                     logger.info(f"SSO: Updated user {username} details (role: {determined_role}) in DB")
             db.commit()
         except Exception as e:
@@ -101,6 +139,8 @@ async def get_current_user_profile(
             db.rollback()
         finally:
             db.close()
+    else:
+        db.close()
             
     return UserProfile(
         sub=oid,

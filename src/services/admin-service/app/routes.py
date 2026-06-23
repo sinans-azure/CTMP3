@@ -17,6 +17,8 @@ from app.models import (
     RoleAssignmentResponse,
     TrainingGroup,
     UserSummary,
+    CreateUserRequest,
+    CreateUserResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -257,5 +259,120 @@ async def list_groups(
             )
             for g in db_groups
         ]
+    finally:
+        db.close()
+
+
+@router.post(
+    "/users",
+    response_model=CreateUserResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_user(
+    body: CreateUserRequest,
+    claims: Annotated[dict, Depends(require_admin)],
+) -> CreateUserResponse:
+    """Create a new user (Trainer, Admin, or Student) manually with credentials."""
+    from app.database import SessionLocal, User as DbUser
+    import random
+    import string
+
+    db = SessionLocal()
+    try:
+        # Check if username or email already exists
+        existing = db.query(DbUser).filter(
+            (DbUser.username == body.username) | (DbUser.email == body.email)
+        ).first()
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Username or email already registered",
+            )
+
+        # Generate a password if not provided
+        raw_password = body.password
+        if not raw_password:
+            raw_password = "CTMP-" + "".join(
+                random.choices(string.ascii_uppercase + string.digits, k=8)
+            )
+
+        user_id = f"user-{uuid.uuid4().hex[:6]}"
+        invite_token = str(uuid.uuid4())
+
+        new_user = DbUser(
+            id=user_id,
+            username=body.username,
+            email=body.email,
+            hashed_password=DbUser.hash_password(raw_password),
+            name=body.name or body.username,
+            role=body.role.value,
+            invite_token=invite_token,
+        )
+        db.add(new_user)
+        db.commit()
+
+        _add_audit_entry(
+            db=db,
+            actor_id=claims.get("sub", ""),
+            actor_name=claims.get("name", ""),
+            action="create_user",
+            resource_type="user",
+            resource_id=user_id,
+            details={"username": body.username, "role": body.role.value},
+        )
+
+        invite_link = f"/login?token={invite_token}"
+
+        return CreateUserResponse(
+            id=user_id,
+            username=body.username,
+            email=body.email,
+            name=new_user.name,
+            role=new_user.role,
+            password=raw_password,
+            invite_link=invite_link,
+        )
+    finally:
+        db.close()
+
+
+@router.delete(
+    "/users/{user_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_user(
+    user_id: str,
+    claims: Annotated[dict, Depends(require_admin)],
+):
+    """Delete a user from the directory."""
+    from app.database import SessionLocal, User as DbUser
+    db = SessionLocal()
+    try:
+        user = db.query(DbUser).filter(DbUser.id == user_id).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User {user_id} not found",
+            )
+        
+        # Don't allow deleting the emergency local admin itself
+        if user.username == "admin1":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot delete the emergency local administrator account",
+            )
+
+        db.delete(user)
+        db.commit()
+
+        _add_audit_entry(
+            db=db,
+            actor_id=claims.get("sub", ""),
+            actor_name=claims.get("name", ""),
+            action="delete_user",
+            resource_type="user",
+            resource_id=user_id,
+            details={"username": user.username},
+        )
     finally:
         db.close()

@@ -25,6 +25,41 @@ export default function AdminUsersPage() {
   const [search, setSearch] = React.useState("")
   const [loading, setLoading] = React.useState(false)
   const [activeTab, setActiveTab] = React.useState<"trainers" | "students" | "admins">("trainers")
+  const [showAddModal, setShowAddModal] = React.useState(false)
+  const [newUser, setNewUser] = React.useState({
+    username: "",
+    email: "",
+    name: "",
+    role: "Trainer" as "Admin" | "Trainer" | "Student",
+    password: ""
+  })
+  const [createdCredentials, setCreatedCredentials] = React.useState<any>(null)
+
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      const res = await api.post<any>("/api/admin/users", {
+        username: newUser.username,
+        email: newUser.email,
+        name: newUser.name,
+        role: newUser.role,
+        password: newUser.password || undefined
+      })
+      if (res) {
+        setCreatedCredentials(res)
+        fetchData()
+        setNewUser({
+          username: "",
+          email: "",
+          name: "",
+          role: "Trainer",
+          password: ""
+        })
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to create user")
+    }
+  }
 
   const fetchData = async () => {
     setLoading(true)
@@ -97,6 +132,16 @@ export default function AdminUsersPage() {
             Control platform roles, manage sandbox limits, and audit user records.
           </p>
         </div>
+        <Button
+          onClick={() => {
+            setCreatedCredentials(null)
+            setShowAddModal(true)
+          }}
+          className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold flex items-center gap-1.5 self-start"
+        >
+          <UserPlus className="h-4 w-4" />
+          Add User
+        </Button>
       </div>
 
       {/* Tabs Selector */}
@@ -259,6 +304,133 @@ export default function AdminUsersPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Add User Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-zinc-950 border border-zinc-800 rounded-xl shadow-2xl p-6 space-y-4 animate-in zoom-in-95 duration-200">
+            <h2 className="text-xl font-bold text-zinc-50">Add Portal User</h2>
+            <p className="text-xs text-zinc-400">
+              Provision local login credentials or invite a user to the platform.
+            </p>
+            
+            {createdCredentials ? (
+              <div className="space-y-4">
+                <div className="p-3 text-xs bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg">
+                  User account created successfully! Share these credentials.
+                </div>
+                <div className="space-y-2 bg-zinc-900/60 p-3.5 border border-zinc-900 rounded-lg text-xs font-mono">
+                  <div className="flex justify-between">
+                    <span className="text-zinc-500">Username:</span>
+                    <span className="text-zinc-200 select-all">{createdCredentials.username}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-zinc-500">Password:</span>
+                    <span className="text-zinc-200 select-all">{createdCredentials.password}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-zinc-500">Role:</span>
+                    <span className="text-indigo-400">{createdCredentials.role}</span>
+                  </div>
+                  <div className="pt-2 border-t border-zinc-800 flex flex-col gap-1">
+                    <span className="text-zinc-500">Direct Invitation Link:</span>
+                    <span className="text-indigo-400 break-all select-all">{window.location.origin + createdCredentials.invite_link}</span>
+                  </div>
+                </div>
+                <Button 
+                  onClick={() => {
+                    setCreatedCredentials(null)
+                    setShowAddModal(false)
+                  }}
+                  className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold"
+                >
+                  Done
+                </Button>
+              </div>
+            ) : (
+              <form onSubmit={handleCreateUser} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="new-name" className="text-xs text-zinc-400">Full Name</Label>
+                  <Input
+                    id="new-name"
+                    value={newUser.name}
+                    onChange={(e) => setNewUser({...newUser, name: e.target.value})}
+                    placeholder="e.g. Robert Smith"
+                    className="bg-zinc-900 border-zinc-800 text-zinc-50"
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="new-email" className="text-xs text-zinc-400">Email Address</Label>
+                  <Input
+                    id="new-email"
+                    type="email"
+                    value={newUser.email}
+                    onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+                    placeholder="e.g. robert@company.com"
+                    className="bg-zinc-900 border-zinc-800 text-zinc-50"
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="new-username" className="text-xs text-zinc-400">Username</Label>
+                  <Input
+                    id="new-username"
+                    value={newUser.username}
+                    onChange={(e) => setNewUser({...newUser, username: e.target.value})}
+                    placeholder="e.g. robertsmith"
+                    className="bg-zinc-900 border-zinc-800 text-zinc-50 font-mono"
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="new-role" className="text-xs text-zinc-400">Role</Label>
+                  <Select
+                    value={newUser.role}
+                    onValueChange={(val: any) => setNewUser({...newUser, role: val})}
+                  >
+                    <SelectTrigger className="bg-zinc-900 border-zinc-800 text-zinc-50">
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-950 border-zinc-800 text-zinc-200">
+                      <SelectItem value="Trainer">Trainer (Instructor)</SelectItem>
+                      <SelectItem value="Admin">Administrator</SelectItem>
+                      <SelectItem value="Student">Student (Participant)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="new-password" className="text-xs text-zinc-400">Password (Optional)</Label>
+                  <Input
+                    id="new-password"
+                    type="password"
+                    value={newUser.password}
+                    onChange={(e) => setNewUser({...newUser, password: e.target.value})}
+                    placeholder="Leave blank to auto-generate"
+                    className="bg-zinc-900 border-zinc-800 text-zinc-50"
+                  />
+                </div>
+                <div className="flex gap-2 justify-end pt-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setShowAddModal(false)}
+                    className="text-zinc-400 hover:text-zinc-50 hover:bg-zinc-900"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold"
+                  >
+                    Add User
+                  </Button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

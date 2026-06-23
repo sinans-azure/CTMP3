@@ -86,3 +86,21 @@ class HealthResponse(BaseModel):
     """Health check response."""
 
     status: str
+
+
+class CreateUserRequest(BaseModel):
+    username: str = Field(..., min_length=3, max_length=150)
+    email: str = Field(..., min_length=3, max_length=150)
+    name: str = Field(default="")
+    role: AppRole = Field(default=AppRole.TRAINER)
+    password: str | None = Field(default=None, description="Optional custom password. If omitted, one will be generated.")
+
+
+class CreateUserResponse(BaseModel):
+    id: str
+    username: str
+    email: str
+    name: str
+    role: str
+    password: str
+    invite_link: str
