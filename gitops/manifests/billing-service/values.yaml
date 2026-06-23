@@ -37,6 +37,6 @@ env:
 keyvaultName: "ctmp3-kv"
 tenantId: "3e054dd4-88ff-476b-a5bc-14338ac07215"
 workloadIdentity:
-  clientId: ""
+  clientId: "eb005d93-6a81-4eef-8a50-e99cc0613b3d"
 configMapName: billing-service-config
 secretName: billing-service-secrets
