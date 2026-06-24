@@ -35,6 +35,14 @@ terraform {
       source  = "hashicorp/time"
       version = "~> 0.11"
     }
+    tls = {
+      source  = "hashicorp/tls"
+      version = "~> 4.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
   }
 
   backend "azurerm" {
@@ -132,11 +140,11 @@ module "app_gateway" {
   prefix              = var.prefix
   tags                = local.common_tags
 
-  appgw_subnet_id      = module.networking.appgw_subnet_id
-  waf_mode             = "Prevention"
+  appgw_subnet_id       = module.networking.appgw_subnet_id
+  waf_mode              = "Prevention"
   owasp_ruleset_version = "3.2"
-  domain_name          = var.domain_name
-  key_vault_secret_id  = "${module.key_vault.key_vault_uri}secrets/sneakertail-cert"
+  domain_name           = var.domain_name
+  key_vault_secret_id   = "${module.key_vault.key_vault_uri}secrets/sneakertail-cert"
 }
 
 resource "azurerm_role_assignment" "appgw_kv_secrets_user" {
@@ -240,13 +248,13 @@ module "function_app" {
   prefix              = var.prefix
   tags                = local.common_tags
 
-  func_subnet_id           = module.networking.func_subnet_id
-  pe_subnet_id             = module.networking.pe_subnet_id
-  vnet_id                  = module.networking.vnet_id
-  blob_private_dns_zone_id = module.networking.blob_private_dns_zone_id
+  func_subnet_id            = module.networking.func_subnet_id
+  pe_subnet_id              = module.networking.pe_subnet_id
+  vnet_id                   = module.networking.vnet_id
+  blob_private_dns_zone_id  = module.networking.blob_private_dns_zone_id
   queue_private_dns_zone_id = module.networking.queue_private_dns_zone_id
-  web_private_dns_zone_id  = module.networking.web_private_dns_zone_id
-  key_vault_id             = module.key_vault.key_vault_id
+  web_private_dns_zone_id   = module.networking.web_private_dns_zone_id
+  key_vault_id              = module.key_vault.key_vault_id
 }
 
 # =============================================================================
@@ -264,10 +272,10 @@ module "ai_foundry" {
   prefix              = var.prefix
   tags                = local.common_tags
 
-  pe_subnet_id                 = module.networking.pe_subnet_id
-  vnet_id                      = module.networking.vnet_id
+  pe_subnet_id                  = module.networking.pe_subnet_id
+  vnet_id                       = module.networking.vnet_id
   cognitive_private_dns_zone_id = module.networking.cognitive_private_dns_zone_id
-  openai_private_dns_zone_id   = module.networking.openai_private_dns_zone_id
+  openai_private_dns_zone_id    = module.networking.openai_private_dns_zone_id
 
   key_vault_id       = module.key_vault.key_vault_id
   storage_account_id = module.function_app.storage_account_id
@@ -303,11 +311,11 @@ resource "azurerm_user_assigned_identity" "workload" {
 }
 
 resource "azurerm_federated_identity_credential" "workload" {
-  name                       = "${var.prefix}-workload-fed-cred"
-  audience                   = ["api://AzureADTokenExchange"]
-  issuer                     = module.aks.aks_oidc_issuer_url
-  user_assigned_identity_id  = azurerm_user_assigned_identity.workload.id
-  subject                    = "system:serviceaccount:training-portal:ctmp-workload-sa"
+  name                      = "${var.prefix}-workload-fed-cred"
+  audience                  = ["api://AzureADTokenExchange"]
+  issuer                    = module.aks.aks_oidc_issuer_url
+  user_assigned_identity_id = azurerm_user_assigned_identity.workload.id
+  subject                   = "system:serviceaccount:training-portal:ctmp-workload-sa"
 }
 
 resource "azurerm_role_assignment" "workload_kv_secrets_user" {

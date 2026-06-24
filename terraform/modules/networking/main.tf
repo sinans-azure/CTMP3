@@ -172,7 +172,7 @@ resource "azurerm_network_security_rule" "jumpbox_allow_ssh" {
   protocol                    = "Tcp"
   source_port_range           = "*"
   destination_port_range      = "22"
-  source_address_prefixes     = var.jumpbox_ssh_allowed_source_address_prefixes
+  source_address_prefix       = var.jumpbox_ssh_allowed_source_address_prefix
   destination_address_prefix  = "*"
   resource_group_name         = var.resource_group_name
   network_security_group_name = azurerm_network_security_group.jumpbox.name

@@ -39,7 +39,7 @@ resource "azurerm_role_assignment" "aks_dns_contributor_pre" {
 # =============================================================================
 
 resource "azurerm_kubernetes_cluster" "main" {
-  depends_on = [azurerm_role_assignment.aks_dns_contributor_pre]
+  depends_on          = [azurerm_role_assignment.aks_dns_contributor_pre]
   name                = "${var.prefix}-aks"
   location            = var.location
   resource_group_name = var.resource_group_name

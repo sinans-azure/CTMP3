@@ -180,18 +180,18 @@ resource "azurerm_linux_function_app" "main" {
   app_settings = {
     # Identity-based storage connection — the runtime reads this and uses
     # the managed identity to authenticate to the storage account.
-    "AzureWebJobsStorage__accountName"                 = azurerm_storage_account.func.name
-    "AzureWebJobsStorage__credential"                  = "managedidentity"
-    "AzureWebJobsStorage__clientId"                    = azurerm_user_assigned_identity.func.client_id
+    "AzureWebJobsStorage__accountName" = azurerm_storage_account.func.name
+    "AzureWebJobsStorage__credential"  = "managedidentity"
+    "AzureWebJobsStorage__clientId"    = azurerm_user_assigned_identity.func.client_id
 
     # Use the user-assigned identity for all Azure SDK calls.
-    "AZURE_CLIENT_ID"                                  = azurerm_user_assigned_identity.func.client_id
+    "AZURE_CLIENT_ID" = azurerm_user_assigned_identity.func.client_id
 
     # Standard Function App settings.
-    "FUNCTIONS_EXTENSION_VERSION"                      = "~4"
-    "FUNCTIONS_WORKER_RUNTIME"                         = var.runtime_name
-    "WEBSITE_CONTENTOVERVNET"                          = "1"
-    "WEBSITE_RUN_FROM_PACKAGE"                         = "1"
+    "FUNCTIONS_EXTENSION_VERSION" = "~4"
+    "FUNCTIONS_WORKER_RUNTIME"    = var.runtime_name
+    "WEBSITE_CONTENTOVERVNET"     = "1"
+    "WEBSITE_RUN_FROM_PACKAGE"    = "1"
   }
 
   lifecycle {

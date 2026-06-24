@@ -51,12 +51,12 @@ resource "azurerm_cognitive_account" "main" {
 # =============================================================================
 
 resource "azurerm_ai_foundry" "hub" {
-  name                  = "${var.prefix}-ai-hub"
-  location              = var.location
-  resource_group_name   = var.resource_group_name
-  storage_account_id    = var.storage_account_id
-  key_vault_id          = var.key_vault_id
-  tags                  = var.tags
+  name                = "${var.prefix}-ai-hub"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  storage_account_id  = var.storage_account_id
+  key_vault_id        = var.key_vault_id
+  tags                = var.tags
 
   # --- No public network access ---
   public_network_access = "Disabled"
