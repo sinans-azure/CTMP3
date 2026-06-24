@@ -117,3 +117,9 @@ output "web_private_dns_zone_id" {
   description = "Resource ID of the privatelink.azurewebsites.net zone."
   value       = azurerm_private_dns_zone.web.id
 }
+
+output "acr_private_dns_zone_id" {
+  description = "Resource ID of the privatelink.azurecr.io zone."
+  value       = azurerm_private_dns_zone.acr.id
+}
+

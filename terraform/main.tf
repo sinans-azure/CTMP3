@@ -217,11 +217,13 @@ module "aks" {
   appgw_subnet_id   = module.networking.appgw_subnet_id
 
   # ACR private endpoint
-  pe_subnet_id           = module.networking.pe_subnet_id
-  vnet_id                = module.networking.vnet_id
+  pe_subnet_id            = module.networking.pe_subnet_id
+  vnet_id                 = module.networking.vnet_id
   aks_private_dns_zone_id = module.networking.aks_private_dns_zone_id
-  acr_name               = var.acr_name
+  acr_private_dns_zone_id = module.networking.acr_private_dns_zone_id
+  acr_name                = var.acr_name
 }
+
 
 # =============================================================================
 # Module: Function App
@@ -285,7 +287,10 @@ module "jumpbox" {
   prefix               = var.prefix
   tags                 = local.common_tags
   subnet_id            = module.networking.jumpbox_subnet_id
+  key_vault_id         = module.key_vault.key_vault_id
+  admin_ssh_public_key = var.admin_ssh_public_key
 }
+
 
 # =============================================================================
 # Workload Identity & Pod Federation

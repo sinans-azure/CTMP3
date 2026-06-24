@@ -24,6 +24,7 @@ if os.environ.get("USE_ENTRA_DB_AUTH", "").lower() == "true":
     from azure.identity import DefaultAzureCredential
     from urllib.parse import urlparse
     import psycopg2
+    import time
     
     parsed = urlparse(DATABASE_URL)
     db_host = parsed.hostname
@@ -32,15 +33,23 @@ if os.environ.get("USE_ENTRA_DB_AUTH", "").lower() == "true":
     db_user = os.environ.get("DB_USER") or parsed.username or "ctmp3-workload-identity"
     
     credential = DefaultAzureCredential()
+    _cached_db_token = None
+    _cached_db_token_expires_at = 0.0
     
     def get_conn():
-        token_obj = credential.get_token("https://ossrdbms-aad.database.windows.net/.default")
+        global _cached_db_token, _cached_db_token_expires_at
+        now = time.time()
+        if not _cached_db_token or _cached_db_token_expires_at - now < 300:
+            token_obj = credential.get_token("https://ossrdbms-aad.database.windows.net/.default")
+            _cached_db_token = token_obj.token
+            _cached_db_token_expires_at = token_obj.expires_on
+            
         return psycopg2.connect(
             host=db_host,
             port=db_port,
             database=db_name,
             user=db_user,
-            password=token_obj.token,
+            password=_cached_db_token,
             sslmode="require"
         )
     
@@ -55,6 +64,14 @@ else:
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 
 user_group_association = Table(
     "user_group_association",
@@ -100,6 +117,11 @@ class EC2Instance(Base):
     launch_time = Column(DateTime, default=datetime.utcnow)
     group_id = Column(String, ForeignKey("training_groups.id", ondelete="CASCADE"), nullable=False)
     student_id = Column(String, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    
+    accumulated_running_hours = Column(Float, default=0.0)
+    accumulated_stopped_hours = Column(Float, default=0.0)
+    last_state_change_time = Column(DateTime, default=datetime.utcnow)
 
     group = relationship("TrainingGroup", back_populates="instances")
     student = relationship("User")
+

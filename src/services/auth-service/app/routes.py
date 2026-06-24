@@ -1,10 +1,12 @@
 """API routes for auth-service."""
 
 import logging
+import os
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from jose import JWTError, jwt
+from sqlalchemy.orm import Session
 
 from app.config import Settings, get_settings
 from app.dependencies import _fetch_jwks, _get_signing_key, get_current_user
@@ -16,6 +18,7 @@ from app.models import (
     LoginRequest,
     LoginResponse,
 )
+from app.database import get_db, User as DbUser
 
 logger = logging.getLogger(__name__)
 
@@ -25,10 +28,9 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 @router.get("/me", response_model=UserProfile)
 async def get_current_user_profile(
     claims: Annotated[dict, Depends(get_current_user)],
+    db: Session = Depends(get_db),
 ) -> UserProfile:
     """Return the current user's profile extracted from JWT claims and sync to DB."""
-    from app.database import SessionLocal, User as DbUser
-    
     oid = claims.get("oid") or claims.get("sub", "")
     email = claims.get("email", claims.get("preferred_username", ""))
     username = claims.get("preferred_username", email or oid)
@@ -45,14 +47,11 @@ async def get_current_user_profile(
         groups = [groups]
     groups = [str(g) for g in groups]
         
-    import os
-    
     # Extract roles and groups from claims
     roles_lower = [r.lower() for r in roles]
     groups_lower = [str(g).lower() for g in groups]
     
     # Query database to check if user already exists
-    db = SessionLocal()
     db_user_role = None
     existing_user = None
     try:
@@ -137,10 +136,6 @@ async def get_current_user_profile(
         except Exception as e:
             logger.error(f"Error syncing user to database: {e}")
             db.rollback()
-        finally:
-            db.close()
-    else:
-        db.close()
             
     return UserProfile(
         sub=oid,
@@ -204,65 +199,60 @@ async def get_user_roles(
 
 
 @router.post("/login", response_model=LoginResponse)
-async def login(body: LoginRequest) -> LoginResponse:
+async def login(
+    body: LoginRequest,
+    db: Session = Depends(get_db),
+) -> LoginResponse:
     """Authenticate users with local credentials and return profile & mock token."""
-    from app.database import SessionLocal, User
-    db = SessionLocal()
-    try:
-        user = db.query(User).filter(User.username == body.username).first()
-        if not user or not user.verify_password(body.password):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid username or password",
-            )
-        
-        profile = UserProfile(
-            sub=user.id,
-            name=user.name or user.username,
-            email=user.email or "",
-            preferred_username=user.username,
-            roles=[user.role],
-            groups=[g.id for g in user.groups],
-            tenant_id="mock-tenant",
-            oid=user.id
+    user = db.query(DbUser).filter(DbUser.username == body.username).first()
+    if not user or not user.verify_password(body.password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid username or password",
         )
-        
-        return LoginResponse(
-            token=f"mock-{user.id}",
-            user=profile
-        )
-    finally:
-        db.close()
+    
+    profile = UserProfile(
+        sub=user.id,
+        name=user.name or user.username,
+        email=user.email or "",
+        preferred_username=user.username,
+        roles=[user.role],
+        groups=[g.id for g in user.groups],
+        tenant_id="mock-tenant",
+        oid=user.id
+    )
+    
+    return LoginResponse(
+        token=f"mock-{user.id}",
+        user=profile
+    )
 
 
 @router.get("/invite", response_model=LoginResponse)
-async def invite(token: str = Query(..., description="Invitation/auto-login token")) -> LoginResponse:
+async def invite(
+    token: str = Query(..., description="Invitation/auto-login token"),
+    db: Session = Depends(get_db),
+) -> LoginResponse:
     """Verify an invitation token and automatically sign in the user."""
-    from app.database import SessionLocal, User
-    db = SessionLocal()
-    try:
-        user = db.query(User).filter(User.invite_token == token).first()
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid invitation token",
-            )
-        
-        profile = UserProfile(
-            sub=user.id,
-            name=user.name or user.username,
-            email=user.email or "",
-            preferred_username=user.username,
-            roles=[user.role],
-            groups=[g.id for g in user.groups],
-            tenant_id="mock-tenant",
-            oid=user.id
+    user = db.query(DbUser).filter(DbUser.invite_token == token).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid invitation token",
         )
-        
-        return LoginResponse(
-            token=f"mock-{user.id}",
-            user=profile
-        )
-    finally:
-        db.close()
-
+    
+    profile = UserProfile(
+        sub=user.id,
+        name=user.name or user.username,
+        email=user.email or "",
+        preferred_username=user.username,
+        roles=[user.role],
+        groups=[g.id for g in user.groups],
+        tenant_id="mock-tenant",
+        oid=user.id
+    )
+    
+    return LoginResponse(
+        token=f"mock-{user.id}",
+        user=profile
+    )

@@ -22,12 +22,6 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("admin-service starting up")
-    from app.database import init_db
-    try:
-        init_db()
-        logger.info("admin-service database initialized successfully")
-    except Exception as e:
-        logger.error(f"Failed to initialize database: {str(e)}")
     yield
     logger.info("admin-service shutting down")
 

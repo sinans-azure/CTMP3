@@ -138,6 +138,13 @@ variable "user_portal_client_id" {
   default     = ""
 }
 
+variable "admin_ssh_public_key" {
+  description = "SSH public key for access to the jumpbox VM. If empty, a key will be dynamically generated and uploaded to Key Vault."
+  type        = string
+  default     = ""
+}
+
+
 
 
 

@@ -22,8 +22,6 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("student-service starting up")
-    from app.database import init_db
-    init_db()
     yield
     logger.info("student-service shutting down")
 

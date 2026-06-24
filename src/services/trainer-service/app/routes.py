@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
 
 from app.dependencies import require_trainer
 from app.models import (
@@ -17,6 +18,12 @@ from app.models import (
     CreateGroupAndStudentsResponse,
     EC2Instance,
     StudentInstanceResponse,
+)
+from app.database import (
+    get_db,
+    User as DbUser,
+    TrainingGroup as DbGroup,
+    EC2Instance as DbInstance,
 )
 
 logger = logging.getLogger(__name__)
@@ -97,92 +104,83 @@ Outputs:
 @router.get("/instances", response_model=list[StudentInstanceResponse])
 async def get_trainer_instances(
     claims: Annotated[dict, Depends(require_trainer)],
+    db: Session = Depends(get_db),
 ) -> list[StudentInstanceResponse]:
     """Retrieve all instances for the trainer's groups or all if admin/no groups."""
-    from app.database import SessionLocal, EC2Instance as DbInstance, TrainingGroup as DbGroup, User as DbUser
-    db = SessionLocal()
-    try:
-        trainer_id = claims.get("sub", "")
-        # Get groups where this trainer is assigned
-        db_groups = db.query(DbGroup).filter(DbGroup.trainer_id == trainer_id).all()
-        group_ids = [g.id for g in db_groups]
+    trainer_id = claims.get("sub", "")
+    # Get groups where this trainer is assigned
+    db_groups = db.query(DbGroup).filter(DbGroup.trainer_id == trainer_id).all()
+    group_ids = [g.id for g in db_groups]
+    
+    # If the user is Admin or has no groups, let them see all instances
+    roles = claims.get("roles", [])
+    if "Admin" in roles or not group_ids:
+        query = db.query(DbInstance)
+    else:
+        query = db.query(DbInstance).filter(DbInstance.group_id.in_(group_ids))
         
-        # If the user is Admin or has no groups, let them see all instances
-        roles = claims.get("roles", [])
-        if "Admin" in roles or not group_ids:
-            query = db.query(DbInstance)
-        else:
-            query = db.query(DbInstance).filter(DbInstance.group_id.in_(group_ids))
+    db_instances = query.all()
+    
+    result = []
+    for inst in db_instances:
+        student_name = ""
+        student_email = ""
+        if inst.student:
+            student_name = inst.student.name or inst.student.username
+            student_email = inst.student.email or ""
             
-        db_instances = query.all()
+        group_name = inst.group.name if inst.group else "Default Group"
         
-        result = []
-        for inst in db_instances:
-            student_name = ""
-            student_email = ""
-            if inst.student:
-                student_name = inst.student.name or inst.student.username
-                student_email = inst.student.email or ""
-                
-            group_name = inst.group.name if inst.group else "Default Group"
-            
-            result.append(StudentInstanceResponse(
-                id=inst.id,
-                name=inst.name or "Unnamed Instance",
-                state=inst.state or "unknown",
-                instance_type=inst.instance_type or "t3.micro",
-                launch_time=inst.launch_time or datetime.utcnow(),
-                group_id=inst.group_id,
-                group_name=group_name,
-                student_id=inst.student_id,
-                student_name=student_name,
-                student_email=student_email
-            ))
-        return result
-    finally:
-        db.close()
+        result.append(StudentInstanceResponse(
+            id=inst.id,
+            name=inst.name or "Unnamed Instance",
+            state=inst.state or "unknown",
+            instance_type=inst.instance_type or "t3.micro",
+            launch_time=inst.launch_time or datetime.utcnow(),
+            group_id=inst.group_id,
+            group_name=group_name,
+            student_id=inst.student_id,
+            student_name=student_name,
+            student_email=student_email
+        ))
+    return result
 
 
 @router.get("/groups", response_model=list[TrainingGroup])
 async def get_trainer_groups(
     claims: Annotated[dict, Depends(require_trainer)],
+    db: Session = Depends(get_db),
 ) -> list[TrainingGroup]:
     """Retrieve all training groups assigned to the currently authenticated trainer."""
-    from app.database import SessionLocal, TrainingGroup as DbGroup
-    db = SessionLocal()
-    try:
-        trainer_id = claims.get("sub", "")
-        db_groups = db.query(DbGroup).filter(DbGroup.trainer_id == trainer_id).all()
-            
-        result = []
-        for g in db_groups:
-            result.append(TrainingGroup(
-                id=g.id,
-                name=g.name,
-                description=g.description or "",
-                trainer_id=g.trainer_id or "",
-                student_ids=[s.id for s in g.students],
-                created_at=g.created_at,
-                aws_account_id=g.aws_account_id or "",
-                aws_region=g.aws_region or "us-east-1"
-            ))
-        return result
-    finally:
-        db.close()
+    trainer_id = claims.get("sub", "")
+    db_groups = db.query(DbGroup).filter(DbGroup.trainer_id == trainer_id).all()
+        
+    result = []
+    for g in db_groups:
+        result.append(TrainingGroup(
+            id=g.id,
+            name=g.name,
+            description=g.description or "",
+            trainer_id=g.trainer_id or "",
+            student_ids=[s.id for s in g.students],
+            created_at=g.created_at,
+            aws_account_id=g.aws_account_id or "",
+            aws_region=g.aws_region or "us-east-1"
+        ))
+    return result
 
 
 @router.post("/groups", response_model=CreateGroupAndStudentsResponse)
 async def create_group_with_students(
     body: CreateGroupAndStudentsRequest,
-    claims: Annotated[dict, Depends(require_trainer)]
+    claims: Annotated[dict, Depends(require_trainer)],
+    db: Session = Depends(get_db),
 ) -> CreateGroupAndStudentsResponse:
     """Create a new training group and generate its student user accounts in one step."""
-    from app.database import SessionLocal, User as DbUser, TrainingGroup as DbGroup, EC2Instance as DbInstance
     from app.models import GeneratedStudentCredentials
     import string
     import random
     
-    db = SessionLocal()
     try:
         group_id = f"group-{uuid.uuid4().hex[:6]}"
         db_group = DbGroup(
@@ -262,8 +260,6 @@ async def create_group_with_students(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to create group and students: {str(e)}"
         )
-    finally:
-        db.close()
 
 
 @router.post("/groups/{group_id}/students", response_model=TrainingGroup)
@@ -271,67 +267,60 @@ async def assign_students_to_group(
     group_id: str,
     body: AssignStudentsRequest,
     claims: Annotated[dict, Depends(require_trainer)],
+    db: Session = Depends(get_db),
 ) -> TrainingGroup:
     """Assign existing students to a training group."""
-    from app.database import SessionLocal, TrainingGroup as DbGroup, User as DbUser
-    db = SessionLocal()
-    try:
-        group = db.query(DbGroup).filter(DbGroup.id == group_id).first()
-        if not group:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Training group {group_id} not found",
-            )
-            
-        for s_id in body.student_ids:
-            student = db.query(DbUser).filter(DbUser.id == s_id).first()
-            if student and student not in group.students:
-                group.students.append(student)
-                
-        db.commit()
-        db.refresh(group)
-        
-        return TrainingGroup(
-            id=group.id,
-            name=group.name,
-            description=group.description or "",
-            trainer_id=group.trainer_id or "",
-            student_ids=[s.id for s in group.students],
-            created_at=group.created_at,
-            aws_account_id=group.aws_account_id or "",
-            aws_region=group.aws_region or "us-east-1"
+    group = db.query(DbGroup).filter(DbGroup.id == group_id).first()
+    if not group:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Training group {group_id} not found",
         )
-    finally:
-        db.close()
+        
+    for s_id in body.student_ids:
+        student = db.query(DbUser).filter(DbUser.id == s_id).first()
+        if student and student not in group.students:
+            group.students.append(student)
+            
+    db.commit()
+    db.refresh(group)
+    
+    return TrainingGroup(
+        id=group.id,
+        name=group.name,
+        description=group.description or "",
+        trainer_id=group.trainer_id or "",
+        student_ids=[s.id for s in group.students],
+        created_at=group.created_at,
+        aws_account_id=group.aws_account_id or "",
+        aws_region=group.aws_region or "us-east-1"
+    )
 
 
 @router.get("/groups/{group_id}/instances", response_model=list[EC2Instance])
 async def list_group_instances(
     group_id: str,
     claims: Annotated[dict, Depends(require_trainer)],
+    db: Session = Depends(get_db),
 ) -> list[EC2Instance]:
     """List all EC2 instances associated with a training group."""
-    from app.database import SessionLocal, TrainingGroup as DbGroup
-    db = SessionLocal()
-    try:
-        group = db.query(DbGroup).filter(DbGroup.id == group_id).first()
-        if not group:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Training group {group_id} not found",
-            )
-            
-        result = []
-        for inst in group.instances:
-            result.append(EC2Instance(
-                id=inst.id,
-                name=inst.name or "",
-                state=inst.state,
-                instance_type=inst.instance_type,
-                launch_time=inst.launch_time,
-                group_id=inst.group_id,
-                student_id=inst.student_id or ""
-            ))
-        return result
-    finally:
-        db.close()
+    group = db.query(DbGroup).filter(DbGroup.id == group_id).first()
+    if not group:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Training group {group_id} not found",
+        )
+        
+    result = []
+    for inst in group.instances:
+        result.append(EC2Instance(
+            id=inst.id,
+            name=inst.name or "",
+            state=inst.state,
+            instance_type=inst.instance_type,
+            launch_time=inst.launch_time,
+            group_id=inst.group_id,
+            student_id=inst.student_id or ""
+        ))
+    return result
+

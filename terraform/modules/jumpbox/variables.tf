@@ -34,4 +34,16 @@ variable "admin_username" {
   default     = "portaladmin"
 }
 
+variable "key_vault_id" {
+  description = "Resource ID of Key Vault to store dynamically generated SSH private key."
+  type        = string
+}
+
+variable "admin_ssh_public_key" {
+  description = "Optional pre-generated public SSH key. If blank, a key will be dynamically generated."
+  type        = string
+  default     = ""
+}
+
+
 

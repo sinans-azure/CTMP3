@@ -15,18 +15,22 @@ logger = logging.getLogger(__name__)
 security = HTTPBearer()
 
 _jwks_cache: dict | None = None
+_jwks_cache_fetched_at: float = 0.0
 
 
-async def _fetch_jwks(settings: Settings) -> dict:
+async def _fetch_jwks(settings: Settings, force_refresh: bool = False) -> dict:
     """Fetch and cache JWKS from Azure AD endpoint."""
-    global _jwks_cache
-    if _jwks_cache is not None:
+    global _jwks_cache, _jwks_cache_fetched_at
+    import time
+    now = time.time()
+    if not force_refresh and _jwks_cache is not None and (now - _jwks_cache_fetched_at) < 86400:
         return _jwks_cache
 
     async with httpx.AsyncClient(timeout=10.0) as client:
         response = await client.get(settings.jwks_uri)
         response.raise_for_status()
         _jwks_cache = response.json()
+        _jwks_cache_fetched_at = now
         return _jwks_cache
 
 
@@ -65,6 +69,13 @@ async def get_current_user(
     token = credentials.credentials
 
     if token.startswith("mock-"):
+        import os
+        if os.environ.get("ENVIRONMENT", "prod").lower() not in ("dev", "development", "local"):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Mock authentication is disabled in production.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
         from app.database import SessionLocal, User
         parts = token.split("-")
         if len(parts) >= 2:
@@ -93,7 +104,15 @@ async def get_current_user(
 
     try:
         jwks = await _fetch_jwks(settings)
-        signing_key = _get_signing_key(token, jwks)
+        try:
+            signing_key = _get_signing_key(token, jwks)
+        except HTTPException as ex:
+            if "matching signing key" in str(ex.detail):
+                logger.info("Signing key not found in cache. Refetching JWKS...")
+                jwks = await _fetch_jwks(settings, force_refresh=True)
+                signing_key = _get_signing_key(token, jwks)
+            else:
+                raise ex
 
         claims = jwt.decode(
             token,
@@ -101,6 +120,7 @@ async def get_current_user(
             algorithms=["RS256"],
             audience=settings.token_audience,
             issuer=settings.token_issuer,
+
             options={
                 "verify_aud": bool(settings.AZURE_CLIENT_ID),
                 "verify_iss": bool(settings.AZURE_TENANT_ID),

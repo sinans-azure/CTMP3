@@ -176,11 +176,16 @@ resource "azurerm_container_registry" "main" {
   name                          = var.acr_name
   location                      = var.location
   resource_group_name           = var.resource_group_name
-  sku                           = "Standard"
+  sku                           = "Premium"
   admin_enabled                 = false
   public_network_access_enabled = true
   tags                          = var.tags
+
+  network_rule_set {
+    default_action = "Deny"
+  }
 }
+
 
 
 
@@ -274,4 +279,25 @@ resource "azurerm_kubernetes_cluster_extension" "argocd" {
     azurerm_kubernetes_cluster_node_pool.user
   ]
 }
+
+resource "azurerm_private_endpoint" "acr" {
+  name                = "${var.prefix}-acr-pe"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  subnet_id           = var.pe_subnet_id
+  tags                = var.tags
+
+  private_service_connection {
+    name                           = "${var.prefix}-acr-psc"
+    private_connection_resource_id = azurerm_container_registry.main.id
+    subresource_names              = ["registry"]
+    is_manual_connection           = false
+  }
+
+  private_dns_zone_group {
+    name                 = "acr-dns-zone-group"
+    private_dns_zone_ids = [var.acr_private_dns_zone_id]
+  }
+}
+
 
